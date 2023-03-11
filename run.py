@@ -5,6 +5,7 @@ from flask_mail import Mail
 from datetime import timedelta
 from flask_moment import Moment
 from flask import Flask, session
+from utils.rediscli import Cache
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
@@ -16,7 +17,7 @@ import os
 
 
 mail, moment, db = Mail(), Moment(), SQLAlchemy()
-login_manager = LoginManager()
+login_manager, redis_cli = LoginManager(), Cache()
 
 
 def create_app(config_name):
