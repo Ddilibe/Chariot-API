@@ -1,62 +1,67 @@
 #!/usr/bin/env python3
 """ Script for the views for auth blueprint """
+import base64
 import logging
 from . import auth
-from run import db, login_manager
 from .models import User, UserPicture
 from sqlalchemy_media import StoreManager
 from flask import request, jsonify, session
-from flask_login import login_required, login_user, current_user
+from run import db, login_manager, redis_cli
+from flask_login import logout_user, login_user
+from flask_login import login_required, current_user
 
 
 @auth.route('/login', strict_slashes=False, methods=['GET', 'POST'])
 def login():
-    request_data = request.get_json()
+    request_data, info = request.get_json(), {}
     logging.debug("Using request to obtain the data passed")
     email = request_data.get('email_address')
     password = request_data.get('password')
     logging.info("Gotten the email and password data")
-    user = User.query.filter_by(email_address=email).first()
-    if user:
+    if user := User.query.filter_by(email_address=email).first():
         if word := user.verify_password(password):
-            session[email]  = user.user_name
-            user.authenticated = True
+            name = user.user_name
+            if avg := redis_cli.get(name):
+                key = avg.decode('utf-8')
+                info['Twice'] = "You have logged in before"
+            else:
+                key = redis_cli.store(email)
+                redis_cli.session(name, key)
             db.session.add(user)
             db.session.commit()
             login_user(user, remember=True)
-            return jsonify({
-                    "Login": "Successful",
-                    "Message": f"User {email} has login in"
-                }), 200
-    return jsonify({
-            "Login": "Unsuccessful",
-            "Message": f"User {email} has login in",
-            "Error": "Invalid Username or password"
-        }), 401
+            info["Login"] =  "Successful"
+            info["Key"] = key
+            info["Message"], code = f"User {email} has login in", 200
+    else:
+        info["Login"] = "Unsuccessful"
+        info["Message"] = f"User {email} cannot login in"
+        info["Error"], code = "Invalid Username or password", 401
+    return jsonify(info), code
 
 
 @auth.route('/logout/<user_id>', strict_slashes=False, methods=['POST', 'GET'])
 def logout(user_id):
-    # request_data = request.get_json()
-    # user = current_user.email_address
-    # if session.get(email):
-    # if current_user.is_authenticated:
-    new_id = [i for i, j in session.items() if j == user_id][0]
-    user = User.query.filter_by(email_address=new_id)
-    if user.is_authenticated:
-        user.authenticated = False
-    db.session.add(user)
-    db.session.commit()
-    del session[email]
-    logout_user()
-    return jsonify({
-            "Logout": "Successful",
-            "Message": f"User {email} has logged out"
-        })
+    info = {}
+    if email := (redis_cli.get(user_id)).decode('utf-8'):
+        logging.debug(f"The username is {email}")
+        user = User.query.filter_by(email_address=email).first()
+        logging.debug(dir(user))
+        redis_cli.dele(user_id)
+        db.session.add(user)
+        db.session.commit()
+        logout_user()
+        info["Logout"] = "Successful",
+        info["Message"] = f"User {email} has logged out"
+    else:
+        info['Logout'] = "Logout is Unsuccessful"
+        info['Message'] = "User is not logged at the moment"
+    return jsonify(info)
 
 
 @auth.route('/signup', strict_slashes=False, methods=['GET', 'POST'])
 def signup():
+    info = {}
     try:
         logging.info("Starting the signingup of a new user")
         with StoreManager(db.session):
@@ -66,44 +71,46 @@ def signup():
             request_data = request.get_json()
             logging.debug(f"Confirming the type of request_data {type(request_data)}")
             user.email_address = request_data.get('email_address')
-            logging.info("User attribute has accepted email_address")
             user.user_name = request_data.get('user_name')
-            logging.info("User attribute has accepted username")
             user.first_name = request_data.get("first_name")
-            logging.info("User attribute has accepted first_name")
             user.last_name = request_data.get("last_name")
-            logging.info("User attribute has accepted last_name")
             user.phone_number = request_data.get("phone_number")
-            logging.info("User attribute has accepted phone_number")
             user.gender = request_data.get("gender")
-            logging.info("User attribute has accepted gender")
+            logging.info(""" User attribute has accepted email_address
+                    User attribute has accepted username
+                    User attribute has accepted first_name
+                    User attribute has accepted last_name
+                    User attribute has accepted phone_number
+                    User attribute has accepted gender """)
             if pic := request_data.get('profile_picture'):
-                user.profile_picture = UserPicture.create_from(pic)
+                pic_name = request_data.get('picture_name')
+                pic = bytes(pic, 'utf-8')
+                with open(pic_name, 'wb') as pic_file:
+                    pic_file.write(base64.b64decode((pic)))
+                user.profile_picture = UserPicture.create_from(pic_name)
             user.password = request_data.get('password')
             db.session.add(user)
             db.session.commit()
             e = request_data.get('email_address')
-            return jsonify({
-                    "Signup": "Successful",
-                    "Message": f"User {e} has signed up",
-                    "email_address": request_data.get('email_address'),
-                    "user_name": request_data.get('username'),
-                    "first_name": request_data.get("first_name"),
-                    "last_name": request_data.get("last_name"),
-                    "phone_number": request_data.get("phone_number"),
-                    "gender": request_data.get("gender")
-                }), 200
+            info["Signup"] = "Successful"
+            info["Message"] = f"User {e} has signed up",
+            info["email_address"] = request_data.get('email_address'),
+            info["user_name"] = request_data.get('user_name'),
+            info["first_name"] = request_data.get("first_name"),
+            info["last_name"] = request_data.get("last_name"),
+            info["phone_number"] = request_data.get("phone_number"),
+            info["gender"], code = request_data.get("gender"), 200
     except Exception as e:
-        return jsonify({
-                "Signup" : "Failure",
-                "Message": "Invalid credential for signup",
-                "Error": f"{e}"
-            }), 400
+        info["Signup"] = "Failure",
+        info["Message"] = "Invalid credential for signup",
+        info["Error"], code = f"{e}", 400
+    return jsonify(info), code
 
 
-@auth.route('/check/<user_id>', strict_slashes=False, methods=['POST', "GET"])
+@auth.route('/check', strict_slashes=False, methods=['GET'])
 @login_required
-def check_for_login(user_id):
-    return jsonify({
-            "Name": dir(current_user),
-        })
+def check():
+    info = {
+        "1": "one", "2": "two", "3": "three"
+    }
+    return jsonify(info)

@@ -72,7 +72,8 @@ class User(UserMixin, db.Model):
     # review =
 
     def __init__(self, **kwargs):
-        super(User, self).__init__(**kwargs)
+        super(UserMixin, self).__init__(**kwargs)
+        super(db.Model, self).__init__(**kwargs)
         id = str(uuid.uuid4())
         merchant_id = str(uuid.uuid4())
 
