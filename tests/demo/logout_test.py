@@ -13,5 +13,5 @@ params = {
     "password": "wearealwaysrunning"
 }
 
-req = requests("http://127.0.0.1:5000/auth/logout")
+req = requests.post("http://127.0.0.1:5000/auth/logout/b49cc592-32b4-409d-a83d-ab788deeb137")
 print(req.text)
