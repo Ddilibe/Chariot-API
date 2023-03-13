@@ -4,3 +4,24 @@
 
 class ProductWithoutCreator(Exception):
     pass
+
+class ExcessProductInput(Exception):
+    pass
+
+class UnavaliableImageName(Exception):
+    pass
+
+class RequiredDataError(Exception):
+    pass
+
+class InvalidKeyError(Exception):
+    pass
+
+class UserNonExistError(Exception):
+    pass
+
+class ProductNotExistError(Exception):
+    pass
+
+class TagNotExistError(Exception):
+    pass
