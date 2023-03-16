@@ -9,13 +9,13 @@ with open("some.png", 'rb') as img_file:
 
 
 params = {
-    "email_address": 'mike_nwachukwu@gmail.com',
-    "user_name": 'Mike',
-    "first_name": "Nwachukwu",
-    "last_name": "Nnenna",
-    "phone_number": 44334935030232,
+    "email_address": 'abudhi_micheal@gmail.com',
+    "user_name": 'James',
+    "first_name": "Abuchi",
+    "last_name": "Micheal",
+    "phone_number": 429482942889,
     "gender": "male",
-    "password": "wearferweijoiidnunning",
+    "password": "babbyicantfigureyouout",
     "profile_picture": img_str.decode('utf-8'),
     "picture_name": "some.png"
 }
