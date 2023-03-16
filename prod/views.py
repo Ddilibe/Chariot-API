@@ -3,10 +3,13 @@
 import logging
 from run import db
 from . import prod
-from flask import jsonify
-from .models import Product, Tag
 from auth.models import User
-from utils.exception import ProductWithoutCreator
+from flask import jsonify, request
+from .models import Product, Tag, ProductImage
+from utils.exception import ProductWithoutCreator, ExcessProductInput
+from utils.exception import UnavaliableImageName, RequiredDataError
+from utils.exception import UserNonExistError
+
 
 @prod.route('/prod/all', strict_slashes=False, methods=['GET'])
 def get_all_product():
@@ -43,18 +46,21 @@ def get_all_tags():
         info["tags"] = "No tags has been created"
     return jsonify(info), 200
 
-@prod.route('/prod/<prod_id>', strict_slashes=False, methods=['GET'])
+@prod.route('/prod/<prod_id>', strict_slashes=False, methods=['GET', 'PUT', 'DELETE'])
 def get_single_product(prod_id):
     info = {}
     info["product"], info["error"] = {}, {}
     try:
         single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
         value = info['product']
-        value['name'], value['id'] = single.name, single.prod_id
-        value['price'], value['in_stock'] = single.price, single.in_stock
-        value['description'], value['user'] = single.description, {}
-        value['tags'], use = [tag for tag in single.tags], value['user']
-        value['image'] = single.image
+        keys = ["name", "description", 'id', "price", 'in_stock', 'tags', 'image']
+        for i in keys:
+            if i == "tags":
+                value[i] = [tag for tag in single.tags]
+                continue
+            value[i] = single.get(i)
+        value['user'] = {}
+        use = value['user']
         try:
             logging.debug(f"Picture exists ")
             if user := User.query.filter(User.merchant_id==single.merchant_id).first_or_404():
@@ -76,7 +82,7 @@ def get_single_product(prod_id):
         logging.debug(f"This is it:{info}")
         return jsonify(info), 200
 
-@prod.route('/tag/<tag_id>', strict_slashes=False, methods=['GET'])
+@prod.route('/tag/<tag_id>', strict_slashes=False, methods=['GET', 'PUT', 'DELETE'])
 def get_post_with_tag(tag_id):
     info = {}
     info["Login"] = False
@@ -92,6 +98,61 @@ def get_post_with_tag(tag_id):
     finally:
         return jsonify(info), 200
 
-@prod.route('/prod/c', strict_slashes=False, methods=["GET, UPDATE"])
-def create_update_post():
-    pass
+@prod.route('/prod/c', strict_slashes=False, methods=["POST"])
+def create_product():
+    info = {}
+    info["error"] = {}
+    request_data = request.get_json()
+    try:
+        for i in request_data.keys():
+            if not(i in Product.get_dict().keys()):
+                info['error']['Excess Data'] = f"{i} Not Accepted As An Input"
+                raise ExcessProductInput
+        for i in ["name", "price"]:
+            if not (i in request_data.keys()):
+                info['error']['Required Data'] = f"{i} not in requested data"
+                raise RequiredDataError
+        # if "image" in request_data:
+        if im := request_data.get("image"):
+            if "image_name" in request_data:
+                image_name, im = request_data.get("image_name"), bytes(im, 'utf-8')
+                with open(image_name, 'rw') as file_name:
+                    file_name.write(base64.b64decode((im)))
+                request['image'] = image_name
+            else:
+                info['error']['image_name'] = "Image name is unavaliable"
+                raise UnavaliableImageName
+        new_prod = Product(**request_data)
+        db.session.add(new_prod)
+        db.session.commit()
+        info['Product'], code = {"id": new_prod.prod_id}, 200
+        info["Created"], info["error"] = "Successful", None
+    except Exception as e:
+        info["Created"], code = "Failure", 401
+    finally:
+        return jsonify(info), code
+
+@prod.route('/tags/c/', strict_slashes=False, methods=['POST'])
+def create_tags():
+    info = {}
+    info['error'] = {}
+    try:
+        if request_data := request.get_json():
+            for i in request_data.keys():
+                if not (i in Tag.get_tags()):
+                    info["error"]['Key Error'] = f"Key {i} not a Tag attribute"
+                    raise KeyError
+            if prod_id = Product.query.filter_by(Product.prod_id==request_data['products']).first_or_404():
+                new_user = prod_id
+                del request_data['products']
+            else:
+                info['error']['Key Error'] = f"User doesn't exists in the database"
+                raise UserNonExistError('User Doesn't exists)
+            tags = Tag(**request_data)
+            tags.products.append(new_user)
+            db.session.add(tags)
+            db.commit()
+    except Exception as e:
+        info['error']['created'] = "Failure"
+    finally:
+        return jsonify
