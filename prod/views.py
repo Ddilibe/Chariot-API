@@ -9,7 +9,7 @@ from .models import Product, Tag, ProductImage
 from utils.exception import ProductWithoutCreator, ExcessProductInput
 from utils.exception import UnavaliableImageName, RequiredDataError
 from utils.exception import UserNonExistError, InvalidKeyError
-from utils.exception import ProductNotExistError
+from utils.exception import ProductNotExistError, TagNotExistError
 
 
 @prod.route('/prod/all', strict_slashes=False, methods=['GET'])
@@ -90,20 +90,17 @@ def single_product_actions(prod_id):
             single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
             value = info['product']
             keys = ["name", "description", 'id', "price", 'in_stock', 'tags', 'image']
-            request_data, replace, new_value = request.get_json(), [], {}
+            request_data, new_value = request.get_json(), {}
             for keys, value in request_data.items():
                 if not (keys in Product.get_dict().keys()):
                     info['error']['Invalid Key Error'] = f"{keys} is not a valid key in product"
                     raise InvalidKeyError
-                if single.get(keys) == value:
-                    continue
-                replace.append(keys)
-            for i in replace:
-                new_value[i] = request_data.get(i)
+                if not (single.get(keys) == value):
+                    new_value[keys] = value
             single.query.update(new_value)
             db.session.commit()
             info['product']["Update"] = "Successful"
-            info['product']["Updated Products"] = replace
+            info['product']["Updated Products"] = new_value.keys()
         except Exception as e:
             info['product']["Update"] = "Failure"
         finally:
@@ -128,18 +125,58 @@ def single_product_actions(prod_id):
 @prod.route('/tag/<tag_id>', strict_slashes=False, methods=['GET', 'PUT', 'DELETE'])
 def get_post_with_tag(tag_id):
     info = {}
-    info["Login"] = False
-    try:
-        if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
-            info[tags.name], t = {}, 0
-            for i in tags.products:
-                info[tags.name][f"Product {t}"] = {
-                    "name": t.name, "description": t.descrition
-                }
-    except Exception as e:
-        info['Error'] = "Tag doesn't exists"
-    finally:
-        return jsonify(info), 200
+    info["Login"], info["error"], info['tags'] = False, {}, {}
+    if request.method == "GET":
+        try:
+            if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+                info[tags.name], t = {}, 0
+                for i in tags.products:
+                    info[tags.name][f"Product {t}"] = {
+                        "name": t.name, "description": t.descriiption
+                    }
+            else:
+                info['error']['No Tag'] = "Tag doesn't exists at this time"
+                raise TagNotExistError
+        except Exception as e:
+            info['Error'] = "Tag doesn't exists"
+        finally:
+            return jsonify(info), 200
+    if request.method == "PUT":
+        try:
+            if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+                request_data, new_value = request.get_json(), {}
+                for keys, value in request_data.items():
+                    if not(keys in ['name', "description"]):
+                        info['error']['Invalid Key Error'] = f"{keys} is not a valid key in Tags"
+                        raise KeyError
+                    if not (tags.get(keys) == value):
+                        new_value[keys] = value
+                tags.query.update(new_value)
+                db.session.commit()
+                info['tags']['Update'] = "Successful"
+                info['tags']['Updated Tags'] = new_value.keys()
+            else:
+                info['error']['No Tag'] = "Tag doesn't exists at this time"
+                raise TagNotExistError
+        except Exception as e:
+                info['tags']['Update'] = "Failure"
+        finally:
+            return jsonify(info)
+
+    if request.method == "DELETE":
+        try:
+            if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+                tags.delete()
+                db.session.commit()
+                info['tags']['Delete'] = "Successful"
+            else:
+                info['error']['No tag'] = "Tag doesn't not exists"
+                raise TagNotExistError
+        except Exception as e:
+            info['tags']['delete'] = "Failure"
+        finally:
+            return jsonify(info)
+
 
 @prod.route('/prod/c', strict_slashes=False, methods=["POST"])
 def create_product():
