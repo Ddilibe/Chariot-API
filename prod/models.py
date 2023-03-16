@@ -6,6 +6,7 @@ import base64
 from . import prod
 from os.path import join
 from run import db, TEMP_PATH
+from utils.exceptions import UnavaliableImageName
 from sqlalchemy_media import Image, ImageAnalyzer, ImageValidator, ImageProcessor
 
 
@@ -55,6 +56,15 @@ class Product(db.Model):
     def __init__(self, *args,  **kwargs):
         super(Product, self). __init__( *args, **kwargs)
         self.prod_id = str(uuid.uuid4())
+        if im := kwargs.get("image"):
+            if "image_name" in kwargs.keys():
+                image_name, im = kwargs.get("image_name"), bytes(im, 'utf-8')
+                with open(image_name, 'rw') as file_name:
+                    file_name.write(base64.b64decode((im)))
+                self.image = ProductImage.create_from(image_name)
+            else:
+                info['error']['image_name'] = "Image name is unavaliable"
+                raise UnavaliableImageName
 
     @classmethod
     def get_dict(cls):
