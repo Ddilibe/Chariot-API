@@ -49,6 +49,10 @@ def get_all_tags():
         info["tags"] = "No tags has been created"
     return jsonify(info), 200
 
+
+# Section for the multiple method like get, put and delete for both product and tags
+
+
 @prod.route('/prod/<prod_id>', strict_slashes=False, methods=['GET', 'PUT', 'DELETE'])
 def single_product_actions(prod_id):
     info = {}
@@ -85,6 +89,7 @@ def single_product_actions(prod_id):
         finally:
             logging.debug(f"This is it:{info}")
             return jsonify(info), 200
+
     if request.method == "PUT":
         try:
             single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
@@ -141,6 +146,7 @@ def get_post_with_tag(tag_id):
             info['Error'] = "Tag doesn't exists"
         finally:
             return jsonify(info), 200
+
     if request.method == "PUT":
         try:
             if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
@@ -176,6 +182,8 @@ def get_post_with_tag(tag_id):
             info['tags']['delete'] = "Failure"
         finally:
             return jsonify(info)
+
+# Section for creating a product and tag
 
 
 @prod.route('/prod/c', strict_slashes=False, methods=["POST"])
@@ -236,3 +244,50 @@ def create_tags():
         info['error']['created'] = "Failure"
     finally:
         return jsonify
+
+
+#  Section for adding a tag to a product and removing tags from product
+@prod.route('/prod/<prod_id>/<tag_id>', strict_slashes=False, methods=['PUT', "DELETE"])
+def actions_for_product_and_tag(prod_id, tag_id):
+    info = {}
+    info['Login'], info['product'], info['tags'], info['error'] = False, {}, {}, {}
+    if request.method == "PUT":
+        try:
+            if single := Product.query.filter_by(Product.prod_id==prod_id).first_or_404():
+                if tags:=Tag.query.filter_by(Tag.tag_id==tag_id).first_or_404():
+                    single.tags.append(tags)
+                    db.session.commit()
+                    info['tags']['Added Tag'] = "Successful"
+                    info['product']['New Tag'] = "Successful"
+                else:
+                    info['error']['No Tag'] = "Tag doesn't exist at this time"
+            else:
+                info['error']['No Product'] = "Product doesn't exist at this time"
+                raise ProductNotExistError
+        except Exception as e:
+            info['product']['New Tag'] = "Failure"
+            info['tags']['Added Tag'] = "Failure"
+        finally:
+            return jsonify(info)
+
+    if request.method == "DELETE":
+        try:
+            if single := Product.query.filter_by(Product.prod_id==prod_id).first_or_404():
+                if tags:=Tag.query.filter_by(Tag.tag_id==tag_id).first_or_404():
+                    if not (tags in single.tags):
+                        info['error']['No Tag in product'] = "Tag doesn't exist in the product"
+                        raise TagNotExistError
+                    single.tags.remove(tags)
+                    db.session.commit()
+                    info['product']['Removed Tag'] = "Successful"
+                    info['tags']['Tag Removed'] = "Successful"
+                else:
+                    info['error']['No Tag'] = "Tag doesn't exist at this time"
+            else:
+                info['error']['No Product'] = "Product doesn't exist at this time"
+                raise ProductNotExistError
+        except Exception as e:
+            info['product']['Removed Tag'] = "Failure"
+            info['tags']['Tag Removed'] = "Failure"
+        finally:
+            return jsonify(info)
