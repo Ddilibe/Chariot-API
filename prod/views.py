@@ -8,7 +8,8 @@ from flask import jsonify, request
 from .models import Product, Tag, ProductImage
 from utils.exception import ProductWithoutCreator, ExcessProductInput
 from utils.exception import UnavaliableImageName, RequiredDataError
-from utils.exception import UserNonExistError
+from utils.exception import UserNonExistError, InvalidKeyError
+from utils.exception import ProductNotExistError
 
 
 @prod.route('/prod/all', strict_slashes=False, methods=['GET'])
@@ -22,10 +23,12 @@ def get_all_product():
             info['products'][i] = {}
             val = info['products'][i]
             instance = every[i]
-            val["description"], val["name"] = instance.description, instance.name
-            val["price"], val["in_stock"] = instance.price, instance.in_stock
-            val["image"], val["tags"] = instance.image, [j.name for j in instance.tags]
-            val['id'] = instance.prod_id
+            val = {
+                "description": instance.description, "name": instance.name,
+                "price": instance.price, "in_stock": instance.in_stock,
+                "image": instance.image, "tags": [j.name for j in instance.tags],
+                'id':instance.prod_id
+            }
     else:
         info["products"] = "No product has been created"
     logging.debug(info)
@@ -47,40 +50,80 @@ def get_all_tags():
     return jsonify(info), 200
 
 @prod.route('/prod/<prod_id>', strict_slashes=False, methods=['GET', 'PUT', 'DELETE'])
-def get_single_product(prod_id):
+def single_product_actions(prod_id):
     info = {}
-    info["product"], info["error"] = {}, {}
-    try:
-        single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
-        value = info['product']
-        keys = ["name", "description", 'id', "price", 'in_stock', 'tags', 'image']
-        for i in keys:
-            if i == "tags":
-                value[i] = [tag for tag in single.tags]
-                continue
-            value[i] = single.get(i)
-        value['user'] = {}
-        use = value['user']
+    info["error"], info["product"] = {}, {}
+    if request.method == "POST":
         try:
-            logging.debug(f"Picture exists ")
-            if user := User.query.filter(User.merchant_id==single.merchant_id).first_or_404():
-                use["first_name"], use["last_name"] = user.first_name, user.last_name
-                if user.profile_picture:
-                    use["profile_picture"] = user.profile_picture
+            single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
+            value = info['product']
+            keys = ["name", "description", 'id', "price", 'in_stock', 'tags', 'image']
+            for i in keys:
+                if i == "tags":
+                    value[i] = [tag for tag in single.tags]
+                    continue
+                value[i] = single.get(i)
+            value['user'] = {}
+            use = value['user']
+            try:
+                logging.debug(f"Picture exists ")
+                if user := User.query.filter(User.merchant_id==single.merchant_id).first_or_404():
+                    use["first_name"], use["last_name"] = user.first_name, user.last_name
+                    if user.profile_picture:
+                        use["profile_picture"] = user.profile_picture
+            except Exception as e:
+                error_exixt = "It is impossible for a product to exist with a creator"
+                info['error']['user existence'] = error_exixt
+                del info["product"]
+                raise ProductWithoutCreator
         except Exception as e:
-            error_exixt = "It is impossible for a product to exist with a creator"
-            info['error']['user existence'] = error_exixt
-            del info["product"]
-            raise ProductWithoutCreator
-    except Exception as e:
-        if e == ProductWithoutCreator:
-            prod_exist = "Due to the absence of a user, It is impossible for a"
-            prod_exist += "product to exist without a creator, in this case User"
-            info["error"]["Product Existence"] = prod_exist
-        info["error"]["Product Error"] = f"{prod_id} does not exist at this time"
-    finally:
-        logging.debug(f"This is it:{info}")
-        return jsonify(info), 200
+            if e == ProductWithoutCreator:
+                prod_exist = "Due to the absence of a user, It is impossible for a"
+                prod_exist += "product to exist without a creator, in this case User"
+                info["error"]["Product Existence"] = prod_exist
+            info["error"]["Product Error"] = f"{prod_id} does not exist at this time"
+        finally:
+            logging.debug(f"This is it:{info}")
+            return jsonify(info), 200
+    if request.method == "PUT":
+        try:
+            single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
+            value = info['product']
+            keys = ["name", "description", 'id', "price", 'in_stock', 'tags', 'image']
+            request_data, replace, new_value = request.get_json(), [], {}
+            for keys, value in request_data.items():
+                if not (keys in Product.get_dict().keys()):
+                    info['error']['Invalid Key Error'] = f"{keys} is not a valid key in product"
+                    raise InvalidKeyError
+                if single.get(keys) == value:
+                    continue
+                replace.append(keys)
+            for i in replace:
+                new_value[i] = request_data.get(i)
+            single.query.update(new_value)
+            db.session.commit()
+            info['product']["Update"] = "Successful"
+            info['product']["Updated Products"] = replace
+        except Exception as e:
+            info['product']["Update"] = "Failure"
+        finally:
+            return jsonify(info)
+
+    if request.method == "DELETE":
+        try:
+            single = db.session.query(Product).filter(Product.prod_id==prod_id).first_or_404()
+            if single:
+                single.delete()
+                info['product']['Delete'] = "Successful"
+            else:
+                info['error']['No Product Error'] = "Product doesn't Exists"
+                raise ProductNotExistError
+        except Exception as e:
+            info['product']['Delete'] = "Failure"
+        finally:
+            return jsonify(info)
+
+
 
 @prod.route('/tag/<tag_id>', strict_slashes=False, methods=['GET', 'PUT', 'DELETE'])
 def get_post_with_tag(tag_id):
@@ -142,12 +185,12 @@ def create_tags():
                 if not (i in Tag.get_tags()):
                     info["error"]['Key Error'] = f"Key {i} not a Tag attribute"
                     raise KeyError
-            if prod_id = Product.query.filter_by(Product.prod_id==request_data['products']).first_or_404():
+            if prod_id := Product.query.filter_by(Product.prod_id==request_data['products']).first_or_404():
                 new_user = prod_id
                 del request_data['products']
             else:
                 info['error']['Key Error'] = f"User doesn't exists in the database"
-                raise UserNonExistError('User Doesn't exists)
+                raise UserNonExistError("User Doesn't exists")
             tags = Tag(**request_data)
             tags.products.append(new_user)
             db.session.add(tags)
