@@ -18,6 +18,8 @@ import os
 
 mail, moment, db = Mail(), Moment(), SQLAlchemy()
 login_manager, redis_cli = LoginManager(), Cache()
+WORKING_DIR = os.path.abspath(os.getcwd())
+TEMP_PATH = os.path.join(WORKING_DIR, 'static', 'avatars')
 
 
 def create_app(config_name):
@@ -27,8 +29,6 @@ def create_app(config_name):
     config[config_name].init_app(app)
     login_manager.login_view = 'auth.login'
 
-    WORKING_DIR = os.path.abspath(os.getcwd())
-    TEMP_PATH = os.path.join(WORKING_DIR, 'static', 'avatars')
     storing = 'http://localhost:5000/static/avatars'
     StoreManager.register(
         'fs',
@@ -51,6 +51,9 @@ def create_app(config_name):
     app.logger.info("Initializing the blueprint of auth")
     from auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
+
+    from prod import prod as prod_blueprint
+    app.register_blueprint(prod_blueprint, url_prefix='/p')
 
     with app.app_context():
         db.create_all()
