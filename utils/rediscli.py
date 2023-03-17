@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """ Script for Writing basic redis commands with python """
 import redis
+import os
 from uuid import uuid4
 
 class Cache(object):
     """docstring for Cache"""
     def __init__(self):
         """ Method for initiating the class instance """
-        self._redis = redis.Redis()
+        if env := os.environ['REDIS_URL']:
+            self._redis = redis.from_url(os.environ['REDIS_URL'])
+        else:
+            self._redis = redis.Redis()
         self.flushdb = self._redis.flushdb()
 
     def init_app(app):
