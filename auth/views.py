@@ -18,10 +18,13 @@ def login():
     email = request_data.get('email_address')
     password = request_data.get('password')
     logging.info("Gotten the email and password data")
-    if user := User.query.filter_by(email_address=email).first():
-        if word := user.verify_password(password):
+    user = User.query.filter_by(email_address=email).first()
+    if user:
+        word = user.verify_password(password):
+        if word:
             name = user.user_name
-            if avg := redis_cli.get(name):
+            avg = redis_cli.get(name):
+            if avg:
                 key = avg.decode('utf-8')
                 info['Twice'] = "You have logged in before"
             else:
@@ -43,7 +46,8 @@ def login():
 @auth.route('/logout/<user_id>', strict_slashes=False, methods=['POST', 'GET'])
 def logout(user_id):
     info = {}
-    if email := (redis_cli.get(user_id)).decode('utf-8'):
+    email = (redis_cli.get(user_id)).decode('utf-8'):
+    if email:
         logging.debug(f"The username is {email}")
         user = User.query.filter_by(email_address=email).first()
         logging.debug(dir(user))
@@ -82,7 +86,8 @@ def signup():
                     User attribute has accepted last_name
                     User attribute has accepted phone_number
                     User attribute has accepted gender """)
-            if pic := request_data.get('profile_picture'):
+            pic = request_data.get('profile_picture'):
+            if pic:
                 pic_name = request_data.get('picture_name')
                 pic = bytes(pic, 'utf-8')
                 with open(pic_name, 'wb') as pic_file:
