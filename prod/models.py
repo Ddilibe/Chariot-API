@@ -6,7 +6,7 @@ import base64
 from . import prod
 from os.path import join
 from run import db, TEMP_PATH
-from utils.exceptions import UnavaliableImageName
+from utils.exception import UnavaliableImageName
 from sqlalchemy_media import Image, ImageAnalyzer, ImageValidator, ImageProcessor
 
 
