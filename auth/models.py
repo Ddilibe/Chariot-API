@@ -29,7 +29,7 @@ class Json(db.TypeDecorator):
     def process_bind_param(self, value, engine):
         return json.dumps(value)
 
-    def process_result_value(Self, value, engine):
+    def process_result_value(self, value, engine):
         return json.loads(value) if value else None
 
 
