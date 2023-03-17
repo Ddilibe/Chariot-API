@@ -18,6 +18,9 @@ class Config:
     FLASKY_MAIL_SENDER = "Chariot Admin <chariotadmin@chariot.com>"
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SESSION_TYPE = "sqlalchemy"
+    SESSION_PERMANENT = True
+
 
     @staticmethod
     def init_app(app):
