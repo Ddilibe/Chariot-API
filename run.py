@@ -38,8 +38,7 @@ def create_app(config_name):
 
     logging.basicConfig(
         filename="chariot_log.log",
-        level=logging.DEBUG,
-        encoding='utf-8'
+        level=logging.DEBUG
     )
 
     app.logger.info(" Initializing App for mail, moment, db and login_manager")
