@@ -8,8 +8,8 @@ class Cache(object):
     """docstring for Cache"""
     def __init__(self):
         """ Method for initiating the class instance """
-        if env := os.environ['REDIS_URL']:
-            self._redis = redis.from_url(os.environ['REDIS_URL'])
+        if env := os.environ.get('REDIS_URL'):
+            self._redis = redis.from_url(env)
         else:
             self._redis = redis.Redis()
         self.flushdb = self._redis.flushdb()
