@@ -238,7 +238,7 @@ def create_tags():
                 info["error"]['Key Error'] = f"Key {i} not a Tag attribute"
                 raise KeyError
         prod_id = Product.query.filter_by(Product.prod_id==request_data['products']).first_or_404():
-        if prod_id :
+        if prod_id:
             new_user = prod_id
             del request_data['products']
         else:
