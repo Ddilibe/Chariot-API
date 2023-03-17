@@ -56,7 +56,8 @@ class Product(db.Model):
     def __init__(self, *args,  **kwargs):
         super(Product, self). __init__( *args, **kwargs)
         self.prod_id = str(uuid.uuid4())
-        if im := kwargs.get("image"):
+        im = kwargs.get("image"):
+        if im:
             if "image_name" in kwargs.keys():
                 image_name, im = kwargs.get("image_name"), bytes(im, 'utf-8')
                 with open(image_name, 'rw') as file_name:
