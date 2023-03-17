@@ -22,7 +22,11 @@ class Cart(db.model):
 
     def add_item(self, value):
         if isinstance(Product, value['name']):
-            self.products.append(value)
+            if not (value in self.product):
+                self.products.append(value)
+            else:
+                prod = [i for i in self.products if i['name'].prod_id == value['name'].prod_id][0]
+                prod['number'] += value['number']
             return
         raise NotProductInstance
 
