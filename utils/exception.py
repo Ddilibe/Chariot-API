@@ -25,3 +25,6 @@ class ProductNotExistError(Exception):
 
 class TagNotExistError(Exception):
     pass
+
+class UnavaliableImageName(Exception):
+    pass
