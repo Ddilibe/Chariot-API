@@ -16,7 +16,8 @@ from utils.exception import ProductNotExistError, TagNotExistError
 def get_all_product():
     info = {}
     info["Login"] = False
-    if every := db.session.query(Product).all():
+    every = db.session.query(Product).all():
+    if every:
         logging.info(every)
         info['products'] = {}
         for i in range(len(every)):
@@ -38,7 +39,8 @@ def get_all_product():
 def get_all_tags():
     info={}
     info['tags'], info["Login"] = {}, False
-    if taggit := db.session.query(Tag).all():
+    taggit = db.session.query(Tag).all():
+    if taggit:
         for i in range(len(taggit)):
             info["tags"][i] = {}
             val = info["tags"][i]
@@ -71,7 +73,8 @@ def single_product_actions(prod_id):
             use = value['user']
             try:
                 logging.debug(f"Picture exists ")
-                if user := User.query.filter(User.merchant_id==single.merchant_id).first_or_404():
+                user = User.query.filter(User.merchant_id==single.merchant_id).first_or_404():
+                if user:
                     use["first_name"], use["last_name"] = user.first_name, user.last_name
                     if user.profile_picture:
                         use["profile_picture"] = user.profile_picture
@@ -133,7 +136,8 @@ def get_post_with_tag(tag_id):
     info["Login"], info["error"], info['tags'] = False, {}, {}
     if request.method == "GET":
         try:
-            if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            tags = Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            if tags:
                 info[tags.name], t = {}, 0
                 for i in tags.products:
                     info[tags.name][f"Product {t}"] = {
@@ -149,7 +153,8 @@ def get_post_with_tag(tag_id):
 
     if request.method == "PUT":
         try:
-            if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            tags = Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            if tags:
                 request_data, new_value = request.get_json(), {}
                 for keys, value in request_data.items():
                     if not(keys in ['name', "description"]):
@@ -171,7 +176,8 @@ def get_post_with_tag(tag_id):
 
     if request.method == "DELETE":
         try:
-            if tags := Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            tags = Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            if tags:
                 tags.delete()
                 db.session.commit()
                 info['tags']['Delete'] = "Successful"
@@ -201,7 +207,8 @@ def create_product():
                 info['error']['Required Data'] = f"{i} not in requested data"
                 raise RequiredDataError
         # if "image" in request_data:
-        if im := request_data.get("image"):
+        im = request_data.get("image"):
+        if im:
             if "image_name" in request_data:
                 image_name, im = request_data.get("image_name"), bytes(im, 'utf-8')
                 with open(image_name, 'rw') as file_name:
@@ -225,21 +232,22 @@ def create_tags():
     info = {}
     info['error'] = {}
     try:
-        if request_data := request.get_json():
-            for i in request_data.keys():
-                if not (i in Tag.get_tags()):
-                    info["error"]['Key Error'] = f"Key {i} not a Tag attribute"
-                    raise KeyError
-            if prod_id := Product.query.filter_by(Product.prod_id==request_data['products']).first_or_404():
-                new_user = prod_id
-                del request_data['products']
-            else:
-                info['error']['Key Error'] = f"User doesn't exists in the database"
-                raise UserNonExistError("User Doesn't exists")
-            tags = Tag(**request_data)
-            tags.products.append(new_user)
-            db.session.add(tags)
-            db.commit()
+        request_data = request.get_json():
+        for i in request_data.keys():
+            if not (i in Tag.get_tags()):
+                info["error"]['Key Error'] = f"Key {i} not a Tag attribute"
+                raise KeyError
+        prod_id = Product.query.filter_by(Product.prod_id==request_data['products']).first_or_404():
+        if prod_id :
+            new_user = prod_id
+            del request_data['products']
+        else:
+            info['error']['Key Error'] = f"User doesn't exists in the database"
+            raise UserNonExistError("User Doesn't exists")
+        tags = Tag(**request_data)
+        tags.products.append(new_user)
+        db.session.add(tags)
+        db.commit()
     except Exception as e:
         info['error']['created'] = "Failure"
     finally:
@@ -253,8 +261,10 @@ def actions_for_product_and_tag(prod_id, tag_id):
     info['Login'], info['product'], info['tags'], info['error'] = False, {}, {}, {}
     if request.method == "PUT":
         try:
-            if single := Product.query.filter_by(Product.prod_id==prod_id).first_or_404():
-                if tags:=Tag.query.filter_by(Tag.tag_id==tag_id).first_or_404():
+            single = Product.query.filter_by(Product.prod_id==prod_id).first_or_404():
+            if single:
+                tags = Tag.query.filter_by(Tag.tag_id==tag_id).first_or_404():
+                if tags:
                     single.tags.append(tags)
                     db.session.commit()
                     info['tags']['Added Tag'] = "Successful"
@@ -272,8 +282,10 @@ def actions_for_product_and_tag(prod_id, tag_id):
 
     if request.method == "DELETE":
         try:
-            if single := Product.query.filter_by(Product.prod_id==prod_id).first_or_404():
-                if tags:=Tag.query.filter_by(Tag.tag_id==tag_id).first_or_404():
+            single = Product.query.filter_by(Product.prod_id==prod_id).first_or_404():
+            if single:
+                tags = Tag.query.filter_by(Tag.tag_id==tag_id).first_or_404():
+                if tags:
                     if not (tags in single.tags):
                         info['error']['No Tag in product'] = "Tag doesn't exist in the product"
                         raise TagNotExistError
