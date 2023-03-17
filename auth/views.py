@@ -20,10 +20,10 @@ def login():
     logging.info("Gotten the email and password data")
     user = User.query.filter_by(email_address=email).first()
     if user:
-        word = user.verify_password(password):
+        word = user.verify_password(password)
         if word:
             name = user.user_name
-            avg = redis_cli.get(name):
+            avg = redis_cli.get(name)
             if avg:
                 key = avg.decode('utf-8')
                 info['Twice'] = "You have logged in before"
@@ -46,7 +46,7 @@ def login():
 @auth.route('/logout/<user_id>', strict_slashes=False, methods=['POST', 'GET'])
 def logout(user_id):
     info = {}
-    email = (redis_cli.get(user_id)).decode('utf-8'):
+    email = (redis_cli.get(user_id)).decode('utf-8')
     if email:
         logging.debug(f"The username is {email}")
         user = User.query.filter_by(email_address=email).first()
@@ -86,7 +86,7 @@ def signup():
                     User attribute has accepted last_name
                     User attribute has accepted phone_number
                     User attribute has accepted gender """)
-            pic = request_data.get('profile_picture'):
+            pic = request_data.get('profile_picture')
             if pic:
                 pic_name = request_data.get('picture_name')
                 pic = bytes(pic, 'utf-8')
