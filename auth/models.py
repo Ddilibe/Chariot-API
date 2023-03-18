@@ -64,6 +64,7 @@ class User(UserMixin, db.Model):
     account_status = db.Column(db.Enum(AccountStatEnum),
         default=AccountStatEnum.not_ver, nullable=False)
     merchant_id = db.Column(db.String(128), default=str(uuid.uuid4))
+    cart = db.relationship("Cart", uselist=False, back_populate='user')
     # billing_address =
     # shipping_address =
     # payment_info =
