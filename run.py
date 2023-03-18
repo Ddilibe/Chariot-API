@@ -54,6 +54,9 @@ def create_app(config_name):
     from prod import prod as prod_blueprint
     app.register_blueprint(prod_blueprint, url_prefix='/p')
 
+    from cart import cart as cart_blueprint
+    app.register_blueprint(cart_blueprint, url_prefix='/cart')
+
     with app.app_context():
         db.create_all()
 

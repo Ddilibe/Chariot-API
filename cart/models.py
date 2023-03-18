@@ -8,11 +8,11 @@ from prod.models import Product
 from utils.exception import NotProductInstance
 
 
-class Cart(db.model):
+class Cart(db.Model):
     __tablename__ = 'cart'
 
-    id = db.String(db.Unicode, primary_key=True)
-    user_id = db.mapped_column(db.ForeignKey("User.id"))
+    id = db.Column(db.Unicode, primary_key=True)
+    user_id = db.Model.mapped_column(db.ForeignKey("User.id"))
     user = db.relationship('User', back_populates='cart')
     products = []
 
@@ -23,10 +23,12 @@ class Cart(db.model):
     def add_item(self, value):
         if isinstance(Product, value['name']):
             if not (value in self.product):
+                new_value = value['name']
+                setattr(new_value, "number", value['number'])
                 self.products.append(value)
             else:
                 prod = [i for i in self.products if i['name'].prod_id == value['name'].prod_id][0]
-                prod['number'] += value['number']
+                prod.number += value['number']
             return
         raise NotProductInstance
 
@@ -44,3 +46,6 @@ class Cart(db.model):
             for value in ['name', "description", "price", "image"]:
                 info['Products'][y][value] = prod['name'].get(value)
         return info
+
+    def get_item(self, value):
+        return [i for i in self.products if i['name'].prod_id == value['name'].prod_id][0]

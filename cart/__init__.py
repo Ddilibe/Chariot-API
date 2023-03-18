@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """ Script for the blueprint for the cart """
-from flask import blueprint
+from flask import Blueprint
 
 
-cart = blueprint('cart', __name__)
+cart = Blueprint('cart', __name__)
 
 
 from . import models, error, views
