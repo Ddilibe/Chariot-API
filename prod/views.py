@@ -176,7 +176,7 @@ def get_post_with_tag(tag_id):
 
     if request.method == "DELETE":
         try:
-            tags = Tag.query.filter(Tag.tag_id==tag_id).first_or_404():
+            tags = Tag.query.filter(Tag.tag_id==tag_id).first_or_404()
             if tags:
                 tags.delete()
                 db.session.commit()

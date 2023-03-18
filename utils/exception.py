@@ -28,3 +28,6 @@ class TagNotExistError(Exception):
 
 class UnavaliableImageName(Exception):
     pass
+
+class NotProductInstance(Exception):
+    pass
