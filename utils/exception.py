@@ -31,3 +31,9 @@ class UnavaliableImageName(Exception):
 
 class NotProductInstance(Exception):
     pass
+
+class UserNotLoggedIn(Exception):
+    pass
+
+class NotAbleToBeAnAdminError(Exception):
+    pass
