@@ -37,3 +37,6 @@ class UserNotLoggedIn(Exception):
 
 class NotAbleToBeAnAdminError(Exception):
     pass
+
+class PasswordNotCorrectError(Exception):
+    pass
