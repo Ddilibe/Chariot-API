@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """ Script for testing the software for the auth blueprint """
-import json
 import os
-from run import db, app
+import json
+from uuid import uuid4
 from flask import url_for
 from random import randint
 from auth.models import User
 from unittest import TestCase
+from run import db, app, redis_cli
 
 
 os.environ['FLASK_CONFIG'] = "testing"
@@ -71,10 +72,9 @@ class AuthTest(TestCase):
         )
         assert user.json.get('Login') == "Successful"
         assert user.json.get('Message') == f"User {self.user['email_address']} has login in"
-        self.app.logger.info(user.status_code)
-        assert user.status_code == 201
+        assert user.status_code == 200
 
-    def test_login_with_for(self):
+    def test_login_with_unregistered_user(self):
         new_user = self.get_user(jam=90)
         req = self.client.post(self.app.url_for('auth.login'),
             data=json.dumps(new_user),
@@ -92,6 +92,41 @@ class AuthTest(TestCase):
         new_user = User(**self.user)
         db.session.add(new_user)
         db.session.commit()
+
+    def test_login_and_logout_into_database(self):
+        new_user = {i:self.user[i] for i in ['email_address', "password", "user_name"]}
+        with self.client as c:
+            req = c.post(self.app.url_for('auth.login'), json=new_user)
+            assert req.json['Login'] == "Successful"
+            assert req.json['Key'] == (redis_cli.get(new_user['user_name'])).decode('utf-8')
+            assert req.status_code == 200
+            assert req.json['Message'] == f"User {new_user['email_address']} has login in"
+        with self.client as c:
+            user_id = (redis_cli.get(new_user['user_name'])).decode('utf-8')
+            server = f"{self.app.config['PREFERRED_URL_SCHEME']}"
+            server += f"://{self.app.config['SERVER_NAME']}"
+            logout = server + f"/auth/logout/{user_id}"
+            assert logout == self.app.url_for('auth.logout', user_id=user_id)
+            req = c.post(self.app.url_for('auth.logout', user_id=user_id))
+            assert req.json['Logout'] == "Successful"
+            assert req.status_code == 200
+
+    def test_logout_with_unregistered_user(self):
+        with self.client as c:
+            req = c.post(self.app.url_for('auth.logout', user_id=str(uuid4())))
+            assert req.json['Logout'] == "Logout is Unsuccessful"
+            assert req.status_code == 403
+
+    def test_signup_with_incomplete_data(self):
+        with self.client as c:
+            new_user = self.get_user(jam=44)
+            del new_user['user_name']
+            req = c.post(self.app.url_for('auth.signup'), json=new_user)
+            assert req.json['Signup'] == "Failure"
+            assert req.json["Message"] == "Invalid credential for signup"
+            assert req.status_code == 400
+
+
 
     def tearDown(self):
         db.session.remove()
