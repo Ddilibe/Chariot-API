@@ -78,3 +78,19 @@ def action_cart(prod_id):
             info['error']['Error Occured'] = "Cart inexistent for such User"
         finally:
             return jsonify(info)
+
+@cart.route('/succesful', strict_slashes=False, methods=['GET'])
+def cart_successful():
+    """ Function for a successful purchase of product """
+    info = {
+        "Payment": "Successful",
+    }
+    return jsonify(info), 200
+
+@cart.route('/failure', strict_slashes=False, methods=['GET'])
+def cart_failure():
+    """ Function for a failure during the checkout process """
+    info = {
+        "Payment": "Failure"
+    }
+    return jsonify(info), 401
