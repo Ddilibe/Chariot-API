@@ -10,3 +10,18 @@ def page_not_found(e):
         "Error": "Page doesn't exist"
     }
     return jsonify(info)
+
+@auth.app_errorhandler(415)
+def unsupported_media_type(e):
+    info = {'error': e}
+    return jsonify(info), 415
+""" Error
+        405: Method not allowed
+        406: if it not json, it is not acceptable
+        415: Unsupported Media type
+        204: Successfully processed but no content returned
+        401: Not authorized
+        400: Bad request
+        403: Forbidded request
+        404: Not found request
+"""
