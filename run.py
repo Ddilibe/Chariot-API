@@ -13,6 +13,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_media import StoreManager, FileSystemStore
 import functools
 import logging
+import stripe
+import click
 import os
 
 
@@ -63,8 +65,10 @@ def create_app(config_name):
 
     return app
 
-config_name = (os.getenv('FLASK_CONFIG') or 'default').lower()
+env = os.getenv('FLASK_CONFIG')
+config_name = ( env if env else 'default').lower()
 app = create_app(config_name)
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 app.logger.info("App Initializing done")
 migrate = Migrate(app, db)
 
@@ -89,3 +93,9 @@ def load_user(user_id):
     from auth.models import User
     # since the user_id is just the primary key of our user table, use it in the query for the user
     return User.query.get(int(user_id))
+
+@app.cli.command(help="Run the tests for the app.")
+def tests():
+    import unittest
+    tests = unittest.TestLoader().discover("tests")
+    unittest.TextTestRunner(verbosity=2).run(tests)
