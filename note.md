@@ -20,3 +20,8 @@
 - Test that the picture is converted to image format after it has been decoded to image format
 - Test that the user is not an admin
 - Test that the user is an admin
+
+
+# Environmental Variable
+CURRENCY_API_KEY api key for currency
+STRIPE_SECRET_KEY api key for stripe account
