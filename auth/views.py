@@ -210,8 +210,23 @@ def user_has_loggedin(user_id):
         raise UserNotLoggedIn("User Has Not LoginIn")
     email = email.decode("utf-8")
     user = User.query.filter_by(email_address=email).first_or_404()
-    # if not user:
-    #     info["error"]["Inexsitent User"] = "User doesn't exists in the database"
-    #     info["Complete Sub"] = "Failure"
-    #     raise UserNonExistError("This user doesn't exist")
     return user
+
+@auth.route('/<user_id>/merchant', strict_slashes=False, methods=['GET', 'PUT'])
+def merchant_actions(user_id):
+    """
+        Function for making an active user to be a merchant
+    """
+    try:
+        user, info = user_has_loggedin(user_id), {'id': user_id}
+        if request.method == "GET":
+            info['Merchant'] = user.is_merchant
+        if request.method == "PUT":
+            user.become_merchant()
+            db.session.commit()
+            info['Merchant'] = user.is_merchant
+        code = 201
+    except Exception as e:
+        info['error'], code = e, 403
+    finally:
+        return jsonify(info), code
