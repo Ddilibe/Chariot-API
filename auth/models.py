@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """ Script for the models for the auth blueprint """
+import stripe
 from run import db
 from . import auth
 import enum, uuid, json, base64
@@ -57,15 +58,19 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(255), nullable=False, index=True)
     email_address = db.Column(db.String(255), nullable=False, unique=True, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
+    country = db.Column(db.String(128), nullable=False)
     phone_number = db.Column(db.Integer, nullable=False, unique=True)
     gender = db.Column(db.Enum(GenderEnum), default=GenderEnum.dwti, nullable=False)
     newletter_subscription = db.Column(db.Enum(NewletterSubEnum),
         default=NewletterSubEnum.false, nullable=False)
     account_status = db.Column(db.Enum(AccountStatEnum),
         default=AccountStatEnum.not_ver, nullable=False)
+    is_merchant = db.Column(db.Boolean(), default=False)
     merchant_id = db.Column(db.String(128))
     cart = db.relationship("Cart", uselist=False, back_populates='user')
     is_admin = db.Column(db.Boolean(), default=False)
+    currency = db.Column(db.String(22), default="usd")
+    stripe_account = db.Column(db.String(128))
     # billing_address =
     # shipping_address =
     # payment_info =
@@ -75,8 +80,10 @@ class User(UserMixin, db.Model):
 
     def __init__(self, *args, **kwargs):
         super(User, self).__init__(*args, **kwargs)
+        if kwargs.get('is_merchant'):
+            self.merchant_id = str(uuid.uuid4())
+            self.create_merchant()
         self.id = str(uuid.uuid4())
-        self.merchant_id = str(uuid.uuid4())
         self.password_hash = generate_password_hash(kwargs.get('password'))
         pic = kwargs.get('profile_picture')
         pic_name = kwargs.get('picture_name')
@@ -99,3 +106,19 @@ class User(UserMixin, db.Model):
 
     def is_Admin(self):
         return self.is_admin
+
+    def create_merchant(self):
+        """ Function for creating a connected account for payment """
+        connected_account = stripe.Account.create(
+            type='Standard',
+            country=self.country,
+            email=self.email_address
+        )
+        self.stripe_account = connected_account.id
+
+    def become_merchant(self):
+        """ Method for becomming a merchant """
+        if not self.is_merchant:
+            self.is_merchant = True
+            self.merchant_id = str(uuid.uuid4())
+            self.create_merchant()
