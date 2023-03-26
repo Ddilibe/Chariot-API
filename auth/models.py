@@ -71,6 +71,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean(), default=False)
     currency = db.Column(db.String(22), default="usd")
     stripe_account = db.Column(db.String(128))
+    credit_card = db.relationship('CreditCart', backref='User', lazy=True)
     # billing_address =
     # shipping_address =
     # payment_info =
@@ -110,11 +111,13 @@ class User(UserMixin, db.Model):
     def create_merchant(self):
         """ Function for creating a connected account for payment """
         connected_account = stripe.Account.create(
-            type='Standard',
+            type='standard',
             country=self.country,
             email=self.email_address
         )
         self.stripe_account = connected_account.id
+        db.session.add(self)
+        db.session.commit()
 
     def become_merchant(self):
         """ Method for becomming a merchant """
@@ -122,3 +125,25 @@ class User(UserMixin, db.Model):
             self.is_merchant = True
             self.merchant_id = str(uuid.uuid4())
             self.create_merchant()
+
+
+class CreditCart(db.Model):
+    __tablename__ = "credit_card"
+
+    object_type = "card"
+    id = db.Column(db.String(50), primary_key=True, nullable=False)
+    number = db.Column(db.Integer(), nullable=False)
+    exp_month = db.Column(db.Integer, nullable=False)
+    exp_year = db.Column(db.Integer, nullable=False)
+    cvc = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+
+    def __init__(self, *args, **kwargs):
+        super(CreditCart, self).__init__(*args, **kwargs)
+
+    def produce(self):
+        return {
+            "object": self.object_type,
+            "number": self.number, "exp_year": self.exp_year,
+            "exp_month": self.exp_month, "cvc": self.cvc
+        }
