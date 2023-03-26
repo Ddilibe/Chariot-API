@@ -13,5 +13,6 @@ params = {
     "password": "wearealwaysrunning"
 }
 
-req = requests.post("http://127.0.0.1:5000/auth/logout/ccbb8067-23a5-rereer43b5-86df-5210ca99ca3a")
+# req = requests.delete("http://127.0.0.1:5000/auth/1b697152-0e7d-4b8d-8be6-3494c2891ac6/newsletter")
+req = requests.put("http://127.0.0.1:5000/auth/1f522226-13c7-47e7-94a7-e1fd14e4c49c/admin")
 print(req.text)
