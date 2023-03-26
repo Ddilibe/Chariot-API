@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """ Script for running the whole operation on chariot """
-from config import config
-from flask_mail import Mail
-from datetime import timedelta
-from flask_moment import Moment
-from flask import Flask, session
-from utils.rediscli import Cache
-from flask_migrate import Migrate
-from flask_login import LoginManager
-from flask_sqlalchemy import SQLAlchemy
-# from auth.models import User, UserPicture
 from sqlalchemy_media import StoreManager, FileSystemStore
+# from auth.models import User, UserPicture
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from utils.rediscli import Cache
+from flask import Flask, session
+from flask_moment import Moment
+from datetime import timedelta
+from flask_mail import Mail
+from config import config
 import functools
 import logging
 import stripe
@@ -68,7 +68,7 @@ def create_app(config_name):
 env = os.getenv('FLASK_CONFIG')
 config_name = ( env if env else 'default').lower()
 app = create_app(config_name)
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY') or "sk_test_51MphMeBlSX2qNNEzNZLabtJiTddbkYLDFcYMh6cobTeiVOVXHWGNnnW9mfByCWNhMogPyDXvaK4KdxoMfxGEQTrD00CuwKgwom"
 app.logger.info("App Initializing done")
 migrate = Migrate(app, db)
 
