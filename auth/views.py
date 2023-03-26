@@ -203,14 +203,6 @@ def check_or_convert_admin(user_id):
     finally:
         return jsonify(info), 200
 
-def user_has_loggedin(user_id):
-    logging.info("Testing the decorated function")
-    email = redis_cli.get(user_id)
-    if not email:
-        raise UserNotLoggedIn("User Has Not LoginIn")
-    email = email.decode("utf-8")
-    user = User.query.filter_by(email_address=email).first_or_404()
-    return user
 
 @auth.route('/<user_id>/merchant', strict_slashes=False, methods=['GET', 'PUT'])
 def merchant_actions(user_id):
@@ -230,3 +222,26 @@ def merchant_actions(user_id):
         info['error'], code = e, 403
     finally:
         return jsonify(info), code
+
+@auth.route('/<user_id>/add-credit-card', strict_slashes=False, methods=['POST'])
+def add_credit_card(user_id):
+    try:
+        user = user_has_loggedin(user_id)
+        request_data = request.get_json()
+        request_data['user_id'] = user.id
+        new_credit_card = CreditCard(**request_data)
+        db.session.add(new_credit_card)
+        db.session.commit()
+    except Exception as e:
+        pass
+    return 203
+
+
+def user_has_loggedin(user_id):
+    logging.info("Testing the decorated function")
+    email = redis_cli.get(user_id)
+    if not email:
+        raise UserNotLoggedIn("User Has Not LoginIn")
+    email = email.decode("utf-8")
+    user = User.query.filter_by(email_address=email).first_or_404()
+    return user
