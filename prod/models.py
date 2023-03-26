@@ -141,6 +141,8 @@ class Product(db.Model):
         super(Product, self).__init__(*args, **kwargs)
         self.prod_id = str(uuid.uuid4())
         self.sku = kwargs["name"].replace(" ", "-")
+        if "image_name" in kwargs.keys():
+            self.image = ProductImage.create_from(kwargs['image'])
 
     @classmethod
     def get_dict(cls):
