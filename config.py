@@ -26,9 +26,6 @@ class Config:
     SESSION_TYPE = "sqlalchemy"
     SESSION_PERMANENT = True
     THE_DATABASE = "sqlite" # It can be sqlite or mysql
-    APPLICATION_ROOT = '/'
-    PREFERRED_URL_SCHEME = "http"
-
 
     @staticmethod
     def init_app(app):
@@ -46,13 +43,10 @@ class TestingConfig(Config):
     TESTING = True
     DB_NAME = "TEST_DATABASE_URL"
     SQLALCHEMY_DATABASE_URI = os.environ.get(DB_NAME) or "sqlite://"
-    SERVER_NAME = 'localhost.test'
-
 
 class ProductionConfig(Config):
     ALONE = "sqlite:///" + os.path.join(basedir, 'data.sqlite')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or ALONE
-    SERVER_NAME = 'localhost.prod'
     # DATABASE_URI = "sqlhost"
 
 
