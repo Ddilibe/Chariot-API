@@ -60,6 +60,8 @@ def cart_failure():
 
 @cart.route("/<user_id>/checkout", methods=["POST"])
 def create_checkout_session(user_id):
+    """ Function for checking out users after they have finished
+    adding things to their cart """
     try:
         user, line_items, info = user_has_loggedin(user_id), [], {}
         for item in user.cart.items:
