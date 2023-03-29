@@ -76,7 +76,8 @@ class Cart(db.Model):
             There is no return value
             It just updates the instance in the database
         """
-        new_product = value["name"]
+        new_id = value["name"]
+        new_product = Product.query.filter_by(prod_id=new_id).first_or_404()
         if not (new_product in self.items):
             curr_from = new_product.get("currency")
             curr_to = self.user.currency

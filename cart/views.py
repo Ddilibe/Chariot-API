@@ -85,11 +85,11 @@ def create_checkout_session(user_id):
             success_url="http://localhost:5000/cart/succesful",
             cancel_url="http://localhost:5000/cart/failure",
         )
-        info["sessionId"] = checkout_session["id"]
+        info["sessionId"], code = checkout_session["id"], 200
     except Exception as e:
-        info["error"] = e
+        info["error"], code = e, 403
     finally:
-        return redirect(checkout_session.url, param=jsonify(info))
+        return jsonify(info), code
 
 
 @cart.route("/succesful", strict_slashes=False, methods=["GET"])

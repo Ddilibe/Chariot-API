@@ -8,7 +8,7 @@ from random import randint
 def get_user(jam=None):
         with open(f"populate/users.json", "r") as file:
             file = json.loads(file.read())
-            i = file[randint(3, jam if jam > 3 else jam + 4) if jam else 2]
+            # i = file[randint(3, jam if jam > 3 else jam + 4) if jam else 2]
             i = {
                 "profile_picture": "http://placehold.it/32x32",
                 "first_name": "Wilda ",
