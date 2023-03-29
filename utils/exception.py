@@ -28,3 +28,15 @@ class TagNotExistError(Exception):
 
 class UnavaliableImageName(Exception):
     pass
+
+class NotProductInstance(Exception):
+    pass
+
+class UserNotLoggedIn(Exception):
+    pass
+
+class NotAbleToBeAnAdminError(Exception):
+    pass
+
+class PasswordNotCorrectError(Exception):
+    pass

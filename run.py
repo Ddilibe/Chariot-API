@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """ Script for running the whole operation on chariot """
-from config import config
-from flask_mail import Mail
-from datetime import timedelta
-from flask_moment import Moment
-from flask import Flask, session
-from utils.rediscli import Cache
-from flask_migrate import Migrate
-from flask_login import LoginManager
-from flask_sqlalchemy import SQLAlchemy
-# from auth.models import User, UserPicture
 from sqlalchemy_media import StoreManager, FileSystemStore
+# from auth.models import User, UserPicture
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from utils.rediscli import Cache
+from flask import Flask, session
+from flask_moment import Moment
+from datetime import timedelta
+from flask_mail import Mail
+from config import config
 import functools
 import logging
+import stripe
+import click
 import os
 
 
@@ -54,14 +56,19 @@ def create_app(config_name):
     from prod import prod as prod_blueprint
     app.register_blueprint(prod_blueprint, url_prefix='/p')
 
+    from cart import cart as cart_blueprint
+    app.register_blueprint(cart_blueprint, url_prefix='/cart')
+
     with app.app_context():
         db.create_all()
 
 
     return app
 
-config_name = (os.getenv('FLASK_CONFIG') or 'default').lower()
+env = os.getenv('FLASK_CONFIG')
+config_name = ( env if env else 'default').lower()
 app = create_app(config_name)
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY') or "sk_test_51MphMeBlSX2qNNEzNZLabtJiTddbkYLDFcYMh6cobTeiVOVXHWGNnnW9mfByCWNhMogPyDXvaK4KdxoMfxGEQTrD00CuwKgwom"
 app.logger.info("App Initializing done")
 migrate = Migrate(app, db)
 
@@ -86,3 +93,9 @@ def load_user(user_id):
     from auth.models import User
     # since the user_id is just the primary key of our user table, use it in the query for the user
     return User.query.get(int(user_id))
+
+@app.cli.command(help="Run the tests for the app.")
+def tests():
+    import unittest
+    tests = unittest.TestLoader().discover("tests")
+    unittest.TextTestRunner(verbosity=2).run(tests)

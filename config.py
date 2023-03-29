@@ -17,10 +17,15 @@ class Config:
     FLASKY_MAIL_SUBJECT_PREFIX = "[Chariot API]"
     FLASKY_MAIL_SENDER = "Chariot Admin <chariotadmin@chariot.com>"
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
+    MYSQL_HOST = os.environ.get('MYSQL_HOST')
+    MYSQL_USER = os.environ.get('MYSQL_USER')
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
+    MYSQL_DB = os.environ.get('MYSQL_DB')
+    MYSQL_CURSORCLASS = os.environ.get('MYSQL_CURSORCLASS')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_TYPE = "sqlalchemy"
     SESSION_PERMANENT = True
-
+    THE_DATABASE = "sqlite" # It can be sqlite or mysql
 
     @staticmethod
     def init_app(app):
@@ -29,6 +34,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    TESTING = True
     ALONE = f"sqlite:///{os.path.join(basedir, 'data-dev.sqlite')}"
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or ALONE
 
@@ -38,10 +44,10 @@ class TestingConfig(Config):
     DB_NAME = "TEST_DATABASE_URL"
     SQLALCHEMY_DATABASE_URI = os.environ.get(DB_NAME) or "sqlite://"
 
-
 class ProductionConfig(Config):
     ALONE = "sqlite:///" + os.path.join(basedir, 'data.sqlite')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or ALONE
+    # DATABASE_URI = "sqlhost"
 
 
 config = {
