@@ -8,38 +8,6 @@ from . import prod
 from os.path import join
 from run import db, TEMP_PATH
 from utils.exception import UnavaliableImageName
-from sqlalchemy_media import Image, ImageAnalyzer
-from sqlalchemy_media import ImageValidator, ImageProcessor
-
-
-class ProductImage(Image):
-    """
-    Class for processing image storage for sqlalchemy
-    """
-
-    __pre_processors__ = [
-        ImageAnalyzer(),
-        ImageValidator(
-            minimum=(80, 80),
-            maximum=(800, 600),
-            content_types=["image/jpeg", "image/png"],
-        ),
-        ImageProcessor(fmt="jpeg", width=120),
-    ]
-
-
-class Json(db.TypeDecorator):
-    """
-    Json Type decorator for sqlalchemy
-    """
-
-    impl = db.Unicode
-
-    def process_bind_param(self, value, engine):
-        return json.dumps(value)
-
-    def process_result_value(self, value, engine):
-        return json.loads(value) if value else None
 
 
 class ProductType(enum.Enum):
@@ -95,7 +63,7 @@ class Product(db.Model):
         secondary=product_tags,
         back_populates="products"
     )
-    image = db.Column(ProductImage.as_mutable(Json))
+    image = db.relationship('ProductImage', backref="Product", lazy=True)
     shipable = db.Column(db.Boolean, nullable=False)
     package_dimension = db.Column(db.String(20), nullable=False)
     time_created = db.Column(
@@ -218,3 +186,38 @@ class Tag(db.Model):
             The method returns the value to be obtained or nothing
         """
         return self.__dict__.get(value)
+
+class ProductImage(db.Model):
+
+    """
+        Class model repersentation of the image model
+
+        Parameters
+        @args: id[int] - A primary key for the inputed image
+        @args: image[str] - Url representation of the image
+        @args: product - Product the image is connected to
+    """
+
+    __tablename__ = "productimage"
+
+    img_id = db.Column(db.Integer, nullable=False, primary_key=True, unique=True)
+    image = db.Column(db.String(600), nullable=False, unique=True)
+    product = db.Column(db.Integer, db.ForeignKey('product.prod_id'), nullable=False)
+
+
+    def create(self, requests, *args, **kwargs):
+        """ Method for creating the Image and linking it to the product """
+        if ['image', 'product'] in requests.keys():
+            self.image, self.img_id = requests['image'], uuid.uuid4()
+            self.product = db.session.query(Product).filter(
+                Product.prod_id==requests['prod_id']).first_or_404()
+            db.session.add(self)
+            db.session.commit()
+
+    def update(self, requests, *args, **kwargs):
+        """ Method for updating a particular image for a product """
+        pass
+
+    def delete(self, requests, *args, **kwargs):
+        """ Method for deleting a particular image from a product """
+        pass

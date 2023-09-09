@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ Script for testing an the login a section for the application """
-import requests, json
+import requests, json, time
 
 # params = {
 #     # "email_address": 'denever_rio@gmail.com',
@@ -37,8 +37,33 @@ params = {
     "password": get_user()['password']
 }
 req = requests.post("http://localhost:5000/auth/login", json=params)
-print(req.json())
-wq = requests.post(f"http://localhost:5000/cart/{req.json()['Key']}/checkout")
-print(wq.text)
+print(req.text)
+value = req.json()
+headers = {
+    "Authorization": value.get('Authorization')
+}
+# wq = requests.post(f"http://localhost:5000/cart/{req.json()['Key']}/checkout")
+# print(wq.text)
 # req = requests.get("http://localhost:5000/auth/check")
 # print(req.json())
+req = requests.get("http://localhost:5000/auth/check", headers=headers)
+print(req.text)
+
+req = requests.post("http://localhost:5000/auth/newsletter", headers=headers)
+print(req.text)
+
+req = requests.delete("http://localhost:5000/auth/newsletter", headers=headers)
+print(req.text)
+
+req = requests.get("http://localhost:5000/auth/merchant", headers=headers)
+print(req.text)
+
+# params = {
+#     'number': 329832929874234, 'exp_month':12, "exp_year":2028, 'cvc':232
+# }
+# req = requests.post("http://localhost:5000/auth/addcreditcard", headers=headers, json=params)
+# print(req.text)
+
+# req = requests.post("http://localhost:5000/auth/logout", headers=headers)
+# print(req.text)
+time.sleep(60)

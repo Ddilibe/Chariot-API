@@ -62,5 +62,5 @@ params['is_merchant'] = False
 
 req = requests.post("http://localhost:5000/auth/signup", json=params)
 print(req.json())
-wq = requests.post(f"http://localhost:5000/cart/{req.json()['Key']}/checkout")
-print(wq.json())
+# wq = requests.post(f"http://localhost:5000/cart/{req.json()['Key']}/checkout")
+# print(wq.json())

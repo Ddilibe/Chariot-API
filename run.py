@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """ Script for running the whole operation on chariot """
-from sqlalchemy_media import StoreManager, FileSystemStore
 # from auth.models import User, UserPicture
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -9,6 +8,7 @@ from utils.rediscli import Cache
 from flask import Flask, session
 from flask_moment import Moment
 from datetime import timedelta
+from dotenv import load_dotenv
 from flask_mail import Mail
 from config import config
 import functools
@@ -18,6 +18,7 @@ import click
 import os
 
 
+
 mail, moment, db = Mail(), Moment(), SQLAlchemy()
 login_manager, redis_cli = LoginManager(), Cache()
 WORKING_DIR = os.path.abspath(os.getcwd())
@@ -25,23 +26,17 @@ TEMP_PATH = os.path.join(WORKING_DIR, 'static', 'avatars')
 
 
 def create_app(config_name):
+    load_dotenv()
     app = Flask(__name__)
     app.logger.info("Starting app")
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
     login_manager.login_view = 'auth.login'
 
-    storing = 'http://localhost:5000/static/avatars'
-    StoreManager.register(
-        'fs',
-        functools.partial(FileSystemStore, TEMP_PATH, storing),
-        default=True
-    )
-
-    logging.basicConfig(
-        filename="chariot_log.log",
-        level=logging.DEBUG
-    )
+    # logging.basicConfig(
+    #     filename="chariot_log.log",
+    #     level=logging.DEBUG
+    # )
 
     app.logger.info(" Initializing App for mail, moment, db and login_manager")
     mail.init_app(app)
@@ -65,10 +60,9 @@ def create_app(config_name):
 
     return app
 
-env = os.getenv('FLASK_CONFIG')
-config_name = ( env if env else 'default').lower()
+config_name = os.getenv('FLASK_CONFIG', 'default')
 app = create_app(config_name)
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY') or "sk_test_51MphMeBlSX2qNNEzNZLabtJiTddbkYLDFcYMh6cobTeiVOVXHWGNnnW9mfByCWNhMogPyDXvaK4KdxoMfxGEQTrD00CuwKgwom"
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 app.logger.info("App Initializing done")
 migrate = Migrate(app, db)
 

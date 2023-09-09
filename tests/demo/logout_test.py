@@ -13,5 +13,8 @@ params = {
     "password": "wearealwaysrunning"
 }
 
-req = requests.post("http://127.0.0.1:5000/auth/logout/ccbb8067-23a5-rereer43b5-86df-5210ca99ca3a")
-print(req.text)
+headers = {
+    'Authorization':"Chariot eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiODRkZjUyY2EtZDdiYS00YzIyLWIxODYtZTZlMDEzMzdmOTVhIiwiZXhwIjoxNjk0Mjc4MTMyfQ.on5oqUd25U3-NNaCqCJ_IrwTyV2Tx9wQG_e-uozn-mM"
+}
+req = requests.get("http://127.0.0.1:5000/auth/logout", headers=headers)
+print(req.json())

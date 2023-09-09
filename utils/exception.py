@@ -40,3 +40,6 @@ class NotAbleToBeAnAdminError(Exception):
 
 class PasswordNotCorrectError(Exception):
     pass
+
+class InvalidUserAttributes(Exception):
+    pass

@@ -7,7 +7,7 @@ from flask import jsonify
 @auth.app_errorhandler(404)
 def page_not_found(e):
     info = {
-        "Error": "Page doesn't exist"
+        "Error": str(e)
     }
     return jsonify(info)
 

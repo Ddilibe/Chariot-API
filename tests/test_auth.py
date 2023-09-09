@@ -184,8 +184,7 @@ class AuthClassTest(unittest.TestCase):
             self.assertEqual(req.status_code, 201)
             self.assertEqual(req.json["Signup"], "Successful")
             self.assertEqual(
-                req.json["Message"],
-                f"User {new_user['email_address']} has signed up"
+                req.json["Message"], f"User {new_user['email_address']} has signed up"
             )
 
     def test_c_login_with_user(self):
