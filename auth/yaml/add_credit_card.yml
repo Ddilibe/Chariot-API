@@ -1,0 +1,68 @@
+End point for manipulating credit card
+---
+tags:
+  - Credit Card
+get:
+  parameters:
+    - in: path
+      required: true
+      name: user_id
+      type: string
+responses:
+  200:
+    schema:
+      example:
+        number: 3093402098349489434
+        credit card: Successful
+        exp_month: 12
+        exp_year: 2021
+post:
+  parameters:
+    - in: path
+      required: true
+      name: user_id
+      type: string
+    - in: body
+      required: true
+      name: Credit Card Details
+      schema: 
+        type: object
+        properties:
+          number:
+            type: integer
+            description: The credit card number
+            example: 32093209043234789
+          exp_month:
+            type: array
+            description: The month of expiration of the credit card
+            enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]            
+            example: 12
+          exp_year:
+            type: integer
+            description: The year of expiration of the credit card
+            example: 2024
+          cvc:
+            type: integer
+            description: The CVC of the credit card
+            example: 123
+definitions:
+  CreditCard:
+    type: object
+    properties:
+      number:
+        type: integer
+        description: The credit card number
+        example: 32093209043234789
+      exp_month:
+        type: array
+        description: The month of expiration of the credit card
+        enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]            
+        example: 12
+      exp_year:
+        type: integer
+        description: The year of expiration of the credit card
+        example: 2024
+      cvc:
+        type: integer
+        description: The CVC of the credit card
+        example: 123

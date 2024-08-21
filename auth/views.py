@@ -4,6 +4,7 @@ import json
 import base64
 import logging
 from . import auth
+from flasgger import swag_from
 from cart.models import Cart
 from .models import User, UserPicture
 from sqlalchemy_media import StoreManager
@@ -16,7 +17,8 @@ from flask_login import login_required, current_user
 from utils.exception import UserNonExistError, PasswordNotCorrectError
 
 
-@auth.route("/login", strict_slashes=False, methods=["GET", "POST"])
+@auth.route("/login", strict_slashes=False, methods=["POST"])
+@swag_from('yaml/login.yml')
 def login():
     """
     Function for sigining into the database
@@ -52,17 +54,19 @@ def login():
         w = login_user(user, remember=True)
         logging.info(f"Done logging {w}")
         info["Login"], code = "Successful", 200
-        info["Key"], info["Message"] = key, f"User {email} has login in"
+        info["Key"], info["Message"] = key, f"User {email} has login"
     except Exception as e:
-        info["Login"] = "Unsuccessful"
+        code = 401
+        info["Login"] = f"Unsuccessful"
+        info["error"]["Invalid Enteries"] = "Invalid Username or password"
         info["Message"] = f"User {email} cannot login in"
-        info["error"]["Invalid Enteries"], code = "Invalid Username or password", 401
     finally:
         return jsonify(info), code
 
 
 @user_has_loggedin
-@auth.route("/logout/<user_id>", strict_slashes=False, methods=["POST", "GET"])
+@auth.route("/logout/<user_id>", strict_slashes=False, methods=["POST"])
+@swag_from('yaml/logout.yml')
 def logout(user_id):
     """
     Function for signing out from the api
@@ -75,8 +79,8 @@ def logout(user_id):
     info = {}
     logging.info("Creating the info dict")
     try:
-        logging.debug(f"The username is")
         user = user_has_loggedin(user_id)
+        logging.debug(f"The username is {user.user_name}")
         redis_cli.dele(user.user_name)
         logging.debug(f"They have gotten the user")
         redis_cli.dele(user_id)
@@ -95,7 +99,8 @@ def logout(user_id):
         return jsonify(info), code
 
 
-@auth.route("/signup", strict_slashes=False, methods=["GET", "POST"])
+@auth.route("/signup", strict_slashes=False, methods=["POST"])
+@swag_from('yaml/signup.yml')
 def signup():
     """ Function for sigining up to the API
     or function for registering as a user in this api
@@ -110,11 +115,11 @@ def signup():
             logging.debug(f"Confirming the type of request_data {type(request_data)}")
             new_user, new_cart = User(**request_data), Cart()
             logging.info(
-                """ User attribute has accepted email_address
-                    User attribute has accepted username
-                    User attribute has accepted first_name
-                    User attribute has accepted last_name
-                    User attribute has accepted phone_number
+                """ User attribute has accepted email_address\n
+                    User attribute has accepted username\n
+                    User attribute has accepted first_name\n
+                    User attribute has accepted last_name\n
+                    User attribute has accepted phone_number\n
                     User attribute has accepted gender """
             )
             new_user.cart = new_cart
@@ -136,13 +141,14 @@ def signup():
 
 
 @auth.route("/check", strict_slashes=False, methods=["GET"])
-@login_required
+@swag_from('yaml/check.yml')
 def check():
     info = {"1": "one", "2": "two", "3": "three"}
     return jsonify(info)
 
 
 @auth.route("/<user_id>/newsletter", strict_slashes=False, methods=["POST", "DELETE"])
+@swag_from('yaml/newsletter_subscription.yml')
 def newletter_subscription(user_id):
     info = {}
     info["error"] = {}
@@ -173,7 +179,8 @@ def verify_user(user_id):
     pass
 
 
-@auth.route("/<user_id>/admin", strict_slashes=False, methods=["GET", "POST", "PUT"])
+@auth.route("/<user_id>/admin", strict_slashes=False, methods=["GET", "PUT"])
+@swag_from('yaml/check_or_convert_admin.yml')
 def check_or_convert_admin(user_id):
     try:
         info = {}
@@ -205,12 +212,14 @@ def check_or_convert_admin(user_id):
 
 
 @auth.route('/<user_id>/merchant', strict_slashes=False, methods=['GET', 'PUT'])
+@swag_from('yaml/merchant_actions.yml')
 def merchant_actions(user_id):
     """
         Function for making an active user to be a merchant
     """
+    info = {'error':None}
     try:
-        user, info = user_has_loggedin(user_id), {'id': user_id}
+        user = user_has_loggedin(user_id)
         if request.method == "GET":
             info['Merchant'] = user.is_merchant
         if request.method == "PUT":
@@ -223,7 +232,8 @@ def merchant_actions(user_id):
     finally:
         return jsonify(info), code
 
-@auth.route('/<user_id>/add-credit-card', strict_slashes=False, methods=['POST'])
+@auth.route('/<user_id>/add-credit-card', strict_slashes=False, methods=['POST', 'GET'])
+@swag_from('yaml/add_credit_card.yml')
 def add_credit_card(user_id):
     try:
         user = user_has_loggedin(user_id)

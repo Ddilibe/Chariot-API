@@ -1,0 +1,11 @@
+End Point for verifing the a user login
+---
+tags:
+  - Authentication
+responses:
+  200:
+    schema:
+      example:
+        1: one
+        2: two
+        3: three

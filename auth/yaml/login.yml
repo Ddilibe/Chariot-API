@@ -1,0 +1,37 @@
+End Point for Logging in Users
+---
+tags:
+  - Authentication
+parameters:
+  - in: body
+    name: loginRequest
+    required: true
+    schema:
+      type: object
+      properties:
+        email_address:
+          type: string
+          description: The username of the user
+        password:
+          type: string
+          description: The password of the user
+definitions:
+  Login:
+    type: object
+    properties:
+      email_address:
+        type: string
+        description: The username of the user
+      password:
+        type: string
+        description: The password of the user
+responses:
+  200:
+    description: Generates the login code
+    schema:
+      $ref: '#/definitions/Login'
+    example:
+      result:
+        login: successful
+        key: e09uwe9wjeoci98u232ff89wioej
+        message: User email@address.com has logged in

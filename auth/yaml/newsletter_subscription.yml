@@ -1,0 +1,18 @@
+End Point for subscribing the newsletter
+---
+tags:
+  - Newsletters
+parameters:
+  - in: query
+    required: true
+    name: user_id
+    type: string
+responses:
+  200:
+    schema:
+      example:
+        login: true
+        error: null
+        complete sub: Successful
+        newletter subscription: you have subscribed to the
+

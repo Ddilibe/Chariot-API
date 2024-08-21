@@ -1,0 +1,21 @@
+End Point for Logging out Users
+---
+tags:
+  - Authentication
+parameters:
+  - in: path
+    name: LogoutRequest
+    required: true
+    schema:
+      type: 
+      properties:
+        user_id:
+          type: string
+          description: User ID returned from the login request
+responses:
+  200:
+    description: Logging out
+    examples:
+      result:
+        logout: successful
+        message: User email@address.com has logged out

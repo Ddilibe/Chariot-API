@@ -1,0 +1,21 @@
+End point for converting a user to a merchant or removing the user from a being a merchant
+---
+tags:
+  - Merchant
+parameters:
+  - in: path
+    type: string
+    name: user_id
+    required: true
+responses:
+  200:
+    description: Converting a user to a merchant or removing the user from a being a merchant
+    schema:
+      type: object
+      properties:
+        merchant:
+          type: boolean
+          example: true
+        error:
+          type: string
+          example: There is error in the merchant path

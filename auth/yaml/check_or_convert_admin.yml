@@ -1,0 +1,24 @@
+End Point for check or converting a user to an admin
+---
+tags:
+  - Admin
+parameters:
+  - in: path
+    required: true
+    name: user_id
+    type: string
+responses:
+  200:
+    description: Checking or converting users to an admin
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: null
+        admin:
+          type: boolean
+          example: true
+        admin text:
+          type: string
+          example: You have been granted admin priviledges

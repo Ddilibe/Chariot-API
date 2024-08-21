@@ -10,6 +10,7 @@ from flask import Flask, session
 from flask_moment import Moment
 from datetime import timedelta
 from flask_mail import Mail
+from flasgger import Swagger
 from config import config
 import functools
 import logging
@@ -17,60 +18,45 @@ import stripe
 import click
 import os
 
+env = os.getenv('FLASK_CONFIG')
+config_name = ( env if env else 'default').lower()
 
-mail, moment, db = Mail(), Moment(), SQLAlchemy()
+
 login_manager, redis_cli = LoginManager(), Cache()
+mail, moment, db = Mail(), Moment(), SQLAlchemy()
 WORKING_DIR = os.path.abspath(os.getcwd())
 TEMP_PATH = os.path.join(WORKING_DIR, 'static', 'avatars')
 
+app = Flask(__name__)
 
-def create_app(config_name):
-    app = Flask(__name__)
-    app.logger.info("Starting app")
-    app.config.from_object(config[config_name])
-    config[config_name].init_app(app)
-    login_manager.login_view = 'auth.login'
+app.logger.info("Starting app")
+app.config.from_object(config[config_name])
+config[config_name].init_app(app)
+login_manager.login_view = 'auth.login'
 
-    storing = 'http://localhost:5000/static/avatars'
-    StoreManager.register(
-        'fs',
-        functools.partial(FileSystemStore, TEMP_PATH, storing),
-        default=True
-    )
+app.logger.info(" Initializing App for mail, moment, db and login_manager")
+mail.init_app(app)
+moment.init_app(app)
+db.init_app(app)
+login_manager.init_app(app)
 
-    logging.basicConfig(
-        filename="chariot_log.log",
-        level=logging.DEBUG
-    )
-
-    app.logger.info(" Initializing App for mail, moment, db and login_manager")
-    mail.init_app(app)
-    moment.init_app(app)
-    db.init_app(app)
-    login_manager.init_app(app)
-
-    app.logger.info("Initializing the blueprint of auth")
-    from auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint, url_prefix='/auth')
-
-    from prod import prod as prod_blueprint
-    app.register_blueprint(prod_blueprint, url_prefix='/p')
-
-    from cart import cart as cart_blueprint
-    app.register_blueprint(cart_blueprint, url_prefix='/cart')
-
-    with app.app_context():
-        db.create_all()
-
-
-    return app
-
-env = os.getenv('FLASK_CONFIG')
-config_name = ( env if env else 'default').lower()
-app = create_app(config_name)
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY') or "sk_test_51MphMeBlSX2qNNEzNZLabtJiTddbkYLDFcYMh6cobTeiVOVXHWGNnnW9mfByCWNhMogPyDXvaK4KdxoMfxGEQTrD00CuwKgwom"
-app.logger.info("App Initializing done")
+app.logger.info('Setting up the payment platform')
 migrate = Migrate(app, db)
+swagger = Swagger(app)
+
+from auth import auth as auth_blueprint
+from prod import prod as prod_blueprint
+from cart import cart as cart_blueprint
+
+app.logger.info("Initializing the blueprint")
+app.register_blueprint(auth_blueprint, url_prefix='/auth')
+app.register_blueprint(prod_blueprint, url_prefix='/p')
+app.register_blueprint(cart_blueprint, url_prefix='/cart')
+with app.app_context():
+    db.create_all()
+app.logger.info("App Initializing done")
+
 
 
 

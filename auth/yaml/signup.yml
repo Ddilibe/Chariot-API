@@ -1,0 +1,66 @@
+End Point for signing up users
+---
+tags:
+  - Authentication
+parameters:
+  - in: body
+    name: SignupRequest
+    required: true
+    schema:
+      type: object
+      properties:
+        user_name:
+          type: string
+          description: The username of the user
+        first_name:
+          type: string
+          description: The first name of the user
+        last_name:
+          type: string
+          description: The last name of the user
+        phone_number:
+          type: integer
+          description: The phone number of the user
+        gender:
+          type: string
+          description: The gender of the user
+          enum: [male, female, dwti]
+        email_address:
+          type: string
+          description: The email address of the user
+        password:
+          type: string
+          description: The password of the user
+definitions:
+  Signup:
+    type: object
+    properties:
+      email_address:
+        type: string
+        description: The email address of the user
+      password:
+        type: string
+        description: The password of the user
+      user_name:
+        type: string
+        description: The username of the user
+      first_name:
+        type: string
+        description: The first name of the user
+      last_name:
+        type: string
+        description: The last name of the user
+      phone_number:
+        type: integer
+        description: The phone number of the user
+      gender:
+        type: string
+        description: The gender of the user
+        enum: [male, female, dwti]
+responses:
+  200:
+    description: Creating a new user
+    schema:
+      example:
+        Signup: Successful
+        Message: User email_address has signed up
