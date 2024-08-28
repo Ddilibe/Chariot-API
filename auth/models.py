@@ -3,36 +3,14 @@
 import stripe
 from run import db
 from . import auth
-import enum, uuid, json, base64
+from dotenv import load_dotenv
+import enum, uuid, base64, re, os
 from flask_login import UserMixin
+from sqlalchemy.orm import validates
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy_media import Image, ImageAnalyzer, ImageValidator, ImageProcessor
+from datetime import datetime
 
-
-class UserPicture(Image):
-    __pre_processors__ = [
-        ImageAnalyzer(),
-        ImageValidator(
-            minimum=(80, 80),
-            maximum=(800, 600),
-            content_types=['image/jpeg', 'image/png']
-        ),
-        ImageProcessor(
-            fmt='jpeg',
-            width=120,
-        )
-    ]
-
-
-class Json(db.TypeDecorator):
-    impl = db.Unicode
-
-    def process_bind_param(self, value, engine):
-        return json.dumps(value)
-
-    def process_result_value(self, value, engine):
-        return json.loads(value) if value else None
-
+load_dotenv()
 
 class GenderEnum(enum.Enum):
     male = "MALE"
@@ -47,6 +25,8 @@ class AccountStatEnum(enum.Enum):
     veri = "Verified"
     not_ver = "Not Verified"
 
+from sqlalchemy import Column
+Column()
 
 class User(UserMixin, db.Model):
     __tablename__ = "User"
@@ -54,7 +34,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.String(50), primary_key=True, nullable=False)
     first_name = db.Column(db.String(255), nullable=False, index=True)
     user_name = db.Column(db.String(255), nullable=False, index=True)
-    profile_picture = db.Column(UserPicture.as_mutable(Json))
+    profile_picture = db.Column(db.String(255))
     last_name = db.Column(db.String(255), nullable=False, index=True)
     email_address = db.Column(db.String(255), nullable=False, unique=True, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
@@ -86,13 +66,14 @@ class User(UserMixin, db.Model):
             self.create_merchant()
         self.id = str(uuid.uuid4())
         self.password_hash = generate_password_hash(kwargs.get('password'))
-        pic = kwargs.get('profile_picture')
-        pic_name = kwargs.get('picture_name')
-        if pic and pic_name:
-            pic = bytes(pic, 'utf-8')
-            with open(pic_name, 'wb') as pic_file:
-                pic_file.write(base64.b64decode((pic)))
-            user.profile_picture = UserPicture.create_from(pic_name)
+    
+        
+    @validates("profile_picture")
+    def validates_user_profile_picture(self, key, value):
+        media = os.environ['MEDIASTORAGE']
+        if not re.fullmatch(r"{{media}}/{{self.user_name}}/\w+.jpeg", value):
+            return value
+        raise ValueError("Path for storing image does not match")
 
     @property
     def password(self):
@@ -140,6 +121,26 @@ class CreditCart(db.Model):
 
     def __init__(self, *args, **kwargs):
         super(CreditCart, self).__init__(*args, **kwargs)
+        self.id = str(uuid.uuid4())
+    
+    @validates('exp_year')
+    def verify_exp_year(self, val, key):
+        start_date = datetime.now().year
+        if key not in range(start_date-4, start_date+4):
+            raise ArithmeticError
+        return key
+        
+    @validates('exp_month')
+    def verify_exp_month(self, val, key):
+        if key not in range(1, 13):
+            raise ArithmeticError
+        return key
+    
+    @validates('exp_cvc')
+    def verify_cvc(self, val, key):
+        if key not in range(1, 1000):
+            raise ArithmeticError
+        return key
 
     def produce(self):
         return {

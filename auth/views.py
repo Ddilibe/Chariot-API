@@ -4,9 +4,9 @@ import json
 import base64
 import logging
 from . import auth
+from .models import User
 from flasgger import swag_from
 from cart.models import Cart
-from .models import User, UserPicture
 from sqlalchemy_media import StoreManager
 from flask import request, jsonify, session
 from run import db, login_manager, redis_cli
