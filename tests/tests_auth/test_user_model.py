@@ -1,89 +1,78 @@
 #!/bin/env python3
-from auth.models import GenderEnum, User, CreditCart
+from auth.models import GenderEnum, User, CreditCard
 from dotenv import load_dotenv
 from unittest import TestCase
+from tests.layer import DataLayer
 from uuid import uuid4
+from run import app
 from run import db
 import os
 
 load_dotenv()
 
-class UnitUserTestCase(TestCase):
-
-
-    def setUp(self) -> None:
-        self.user_details = {
-            'first_name': "Emeka", 'user_name': 'Emike', "last_name": "Eze", "id": str(uuid4()),
-            'profile_picture': f"{os.getenv('MEDIASTORAGE')}/Emike/trerieeorieferf.jpeg",
-            "password" : "Passwording", "country": "Nigeria", "phone_number": 2343455346,
-            "gender": GenderEnum.male, "email_address": "emeka.ere@gmail.com"
-        }
-        new_user = User(**self.user_details)
-        db.session.add(new_user)
-        db.session.commit()
-        self.userid = User.query.filter_by(email_address=self.user_details['email_address']).first_or_404()
-
-    def test_user_first_name(self):
-        self.assertEqual(self.userid.first_name, self.user_details['first_name'])
-
-    def test_user_user_name(self):
-        self.assertEqual(self.userid.user_name, self.user_details['user_name'])
-
-    def test_user_last_name(self):
-        self.assertEqual(self.userid.last_name, self.user_details['last_name'])
-
-    def test_user_profile_picture(self):
-        self.assertEqual(self.userid.profile_picture, self.user_details['profile_picture'])
+class UnitDUserTestCase(TestCase):
     
-    def test_user_country(self):
-        self.assertEqual(self.userid.country, self.user_details['country'])
+    @classmethod
+    def setUpClass(cls):
+        cls.datalayer = DataLayer(db, app)
+        cls.user_details = cls.datalayer.user_1
+        if not cls.datalayer.get_user(cls.user_details.get('user_id')):
+            cls.datalayer.create_user(cls.user_details)
+        cls.user_id = cls.datalayer.get_user(cls.user_details.get("user_id"))
 
-    def test_user_gender(self):
-        self.assertEqual(self.userid.gender, self.user_details['gender'])
+    @classmethod
+    def tearDownClass(cls):
+        cls.datalayer.rollover()
 
-    def test_email_address(self):
-        self.assertEqual(self.userid.email_address, self.user_details['email_address'])
+    def test_a_a_user_variable_match(self):
+        self.a
+        self.assertEqual(self.user_id.first_name, self.user_details['first_name'])
+        self.assertEqual(self.user_id.user_name, self.user_details['user_name'])
+        self.assertEqual(self.user_id.last_name, self.user_details['last_name'])
+        self.assertEqual(self.user_id.profile_picture, self.user_details['profile_picture'])
+        self.assertEqual(self.user_id.country, self.user_details['country'])
+        self.assertEqual(self.user_id.gender, self.user_details['gender'])
+        self.assertEqual(self.user_id.email_address, self.user_details['email_address'])
+        
+    def test_a_b_user_variables_match_after_an_update(self):
+        update_user = self.datalayer.update_user
+        for key, value in update_user.items():
+            self.datalayer.edit_user(self.user_id.user_id, key, value)
+        self.assertEqual(self.user_id.first_name, update_user['first_name'])
+        self.assertEqual(self.user_id.user_name, update_user['user_name'])
+        self.assertEqual(self.user_id.last_name, update_user['last_name'])
+        self.assertEqual(self.user_id.profile_picture, update_user['profile_picture'])
+        self.assertEqual(self.user_id.country, update_user['country'])
+        self.assertEqual(self.user_id.gender, update_user['gender'])
+        self.assertEqual(self.user_id.email_address, update_user['email_address'])
+        
 
-    def tearDown(self):
-        db.session.delete(self.userid)
-        db.commit()
-    
 class UnitCreditCartTestCase(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.datalayer = DataLayer(db, app)
+        cls.user_details, cls.creditcard_details = cls.datalayer.user_1, cls.datalayer.credit_card
+        if not cls.datalayer.get_user(cls.user_details.get('user_id')):
+            cls.datalayer.create_user(cls.user_details)
+        cls.user_id = cls.datalayer.get_user(cls.user_details.get("user_id"))
+        if not cls.datalayer.get_credit_card(cls.creditcard_details.get('credit_card_id')):
+            cls.datalayer.create_credit_card(cls.creditcard_details, cls.user_id)
+        cls.user_credit_card = cls.user_id.credit_card
+ 
+    def test_b_credit_card_variables(self):
+        self.assertEqual(self.user_credit_card.exp_month, self.creditcard_details['exp_month'])
+        self.assertEqual(self.user_credit_card.exp_year, self.creditcard_details['exp_year'])
+        self.assertEqual(self.user_credit_card.number, self.creditcard_details['number'])
+        self.assertEqual(self.user_credit_card.cvc, self.creditcard_details['cvc'])
 
-    def setUp(self) -> None:
-        self.user_details = {
-            'first_name': "Emeka", 'user_name': 'Emike', "last_name": "Eze", "id": str(uuid4()),
-            'profile_picture': f"{os.getenv('MEDIASTORAGE')}/Emike/trerieeorieferf.jpeg",
-            "password" : "Passwording", "country": "Nigeria", "phone_number": 2343455346,
-            "gender": GenderEnum.male, "email_address": "emeka.ere@gmail.com"
-        }
-        self.credit_card = {
-            "number": 439898230783298, "exp_month": 9, "exp_year": 2024, "cvc": 438
-        }
-        new_user = User(**self.user_details)
-        db.session.add(new_user)
-        new_credit = CreditCart(**self.credit_card)
-        new_credit.user_id = new_user.id
-        db.session.add(new_credit)
-        db.session.commit()
-        self.user = User.query.filter_by(email_address=self.user_details['email_address']).first_or_404()
-        self.credit = CreditCart.query.filter_by(id=self.user.id).first_or_404()
+    @classmethod
+    def tearDownClass(cls):
+        cls.datalayer.rollover()
 
-    def test_exp_month(self):
-        self.assertEqual(self.credit.exp_month, self.credit_card['exp_month'])
 
-    def test_exp_year(self):
-        self.assertEqual(self.credit.exp_year, self.credit_card['exp_year'])
-
-    def test_number(self):
-        self.assertEqual(self.credit.number, self.credit_card['number'])
-
-    def test_cvc(self):
-        self.assertEqual(self.credit.cvc, self.credit_card['cvc'])
-
-    def tearDown(self) -> None:
-        db.session.delete(self.credit)
-        db.session.delete(self.user)
-        db.commit()
-        return super().tearDownClass()
+class ZZZZZTestCase(TestCase):
+    
+    def test_zzz_clean_database(self):
+        datalayer = DataLayer(db, app)
+        datalayer.clean()

@@ -56,10 +56,11 @@ with app.app_context():
 @app.cli.command(help="Run the tests for the app.")
 def tests():
     import unittest
-    tests = unittest.TestLoader().discover("./tests/tests_auth")
+    tests = unittest.TestLoader().discover("tests/", pattern="tests_auth/test*.py", top_level_dir="tests")
     unittest.TextTestRunner(verbosity=2).run(tests)
     CONFIG = config[config_name]()
     # os.remove(os.getenv(env.upper()))
+    
     
 
 app.logger.info("App Initializing done")

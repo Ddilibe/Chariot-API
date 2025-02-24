@@ -50,7 +50,7 @@ class Cart(db.Model):
     __tablename__ = "cart"
 
     id = db.Column(db.Unicode, primary_key=True)
-    user_id = db.Column(db.String(228), db.ForeignKey("User.id"), unique=True)
+    user_id = db.Column(db.String(228), db.ForeignKey("User.user_id"), unique=True)
     user = db.relationship("User", back_populates="cart")
     items = db.relationship("CartItem", backref="cart", lazy=True)
 

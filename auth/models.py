@@ -3,6 +3,7 @@
 import stripe
 from run import db
 from . import auth
+from typing import Dict
 from dotenv import load_dotenv
 import enum, uuid, base64, re, os
 from flask_login import UserMixin
@@ -31,7 +32,7 @@ Column()
 class User(UserMixin, db.Model):
     __tablename__ = "User"
 
-    id = db.Column(db.String(50), primary_key=True, nullable=False)
+    user_id = db.Column(db.String(50), primary_key=True, nullable=False)
     first_name = db.Column(db.String(255), nullable=False, index=True)
     user_name = db.Column(db.String(255), nullable=False, index=True)
     profile_picture = db.Column(db.String(255))
@@ -51,7 +52,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean(), default=False)
     currency = db.Column(db.String(22), default="usd")
     stripe_account = db.Column(db.String(128))
-    credit_card = db.relationship('CreditCart', backref='User', lazy=True)
+    credit_card = db.relationship('CreditCard', backref='User.user_id', uselist=False)
     # billing_address =
     # shipping_address =
     # payment_info =
@@ -106,21 +107,34 @@ class User(UserMixin, db.Model):
             self.is_merchant = True
             self.merchant_id = str(uuid.uuid4())
             self.create_merchant()
+            
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "user_id": self.user_id,
+            "first_name": self.first_name,
+            "user_name": self.user_name,
+            "profile_picture": self.profile_picture,
+            "last_name": self.last_name,
+            "email_address": self.email_address,
+            "country": self.country,
+            "phone_number": self.phone_number,
+            "gender": self.gender,
+            }
 
-
-class CreditCart(db.Model):
-    __tablename__ = "credit_card"
+class CreditCard(db.Model):
+    __tablename__ = "CreditCard"
 
     object_type = "card"
-    id = db.Column(db.String(50), primary_key=True, nullable=False)
+    credit_card_id = db.Column(db.String(50), primary_key=True, nullable=False)
     number = db.Column(db.Integer(), nullable=False)
     exp_month = db.Column(db.Integer, nullable=False)
     exp_year = db.Column(db.Integer, nullable=False)
     cvc = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('User.user_id'), nullable=False)
+    user = db.relationship("User", backref="CreditCard.credit_card_id")
 
     def __init__(self, *args, **kwargs):
-        super(CreditCart, self).__init__(*args, **kwargs)
+        super(CreditCard, self).__init__(*args, **kwargs)
         self.id = str(uuid.uuid4())
     
     @validates('exp_year')

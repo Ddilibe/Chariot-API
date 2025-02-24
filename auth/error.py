@@ -25,3 +25,13 @@ def unsupported_media_type(e):
         403: Forbidded request
         404: Not found request
 """
+
+class UserDoesNotExists(Exception):
+    
+    def __init__(self) -> None:
+        super().__init__()
+        
+class VariableNotInUserModel(Exception):
+    
+    def __init__(self) -> None:
+        super().__init__()

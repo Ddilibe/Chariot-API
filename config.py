@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """ Script for the configuration class """
 import os
+from dotenv import load_dotenv
 
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv()
 
 
 class Config:
@@ -26,6 +28,7 @@ class Config:
     SESSION_TYPE = "sqlalchemy"
     SESSION_PERMANENT = True
     THE_DATABASE = "sqlite" # It can be sqlite or mysql
+    DATABASENAME = ""
 
     @staticmethod
     def init_app(app):
@@ -33,17 +36,18 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    DEBUG = True
-    TESTING = True
+    DEBUG = False
+    TESTING = False
     ALONE = f"sqlite:///{os.path.join(basedir, 'data-dev.sqlite')}"
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or ALONE
 
 
 class TestingConfig(Config):
-    TESTING = True
+    TEST = True
     DB_NAME = "TEST_DATABASE_URL"
-    ALONE = f"sqlite:///{os.path.join(basedir, 'testing.sqlite')}"
-    SQLALCHEMY_DATABASE_URI = os.environ.get(DB_NAME) or "sqlite://"
+    DATABASENAME = "testing.sqlite"
+    ALONE = f"sqlite:///{os.path.join(basedir, DATABASENAME)}"
+    SQLALCHEMY_DATABASE_URI = os.environ.get(DB_NAME) or ALONE
 
 class ProductionConfig(Config):
     ALONE = "sqlite:///" + os.path.join(basedir, 'data.sqlite')
